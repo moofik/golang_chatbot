@@ -1,0 +1,5 @@
+scenario:
+  name: tg_vcv_unbox
+  provider:
+    name: telegram
+    token: '1799138792:AAGryx8c1D48yT8TAD5VCG1yzXs8k3tPtIc'
