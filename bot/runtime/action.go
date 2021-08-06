@@ -7,17 +7,11 @@ import (
 	"html/template"
 )
 
-type OutgoingMessage struct {
-	ChatID uint    `json:"chat_id"`
-	Text   string `json:"text"`
-	ParseMode string `json:"parse_mode"`
-}
-
 type Action interface {
 	Run(p ChatProvider, t *models.Token, s *State, c command.Command) error
 }
 
-type SendTextMessage struct{
+type SendTextMessage struct {
 	Text string
 }
 

@@ -1,0 +1,63 @@
+package petrinet
+
+import (
+	"errors"
+	"fmt"
+	"reflect"
+)
+
+type Marking struct {
+	Places map[string]bool
+}
+
+func (m *Marking) Mark(place string) {
+	m.Places[place] = true
+}
+
+func (m *Marking) Unmark(place string) error {
+	_, ok := m.Places[place]
+
+	if ok {
+		delete(m.Places, place)
+	}
+
+	return fmt.Errorf("place not found in mark")
+}
+
+func (m *Marking) Has(place string) bool {
+	_, ok := m.Places[place]
+	return ok
+}
+
+type MarkingStorage struct {
+	singleState  bool
+	markingField string
+}
+
+// GetMarking get marking from a subject
+// subject must be a pointer to a struct
+func (s *MarkingStorage) GetMarking(subject interface{}) (*Marking, error) {
+	rv := reflect.ValueOf(subject)
+
+	if rv.Kind() != reflect.Ptr || rv.Elem().Kind() != reflect.Struct {
+		return nil, errors.New("v must be pointer to struct")
+	}
+
+	rv = rv.Elem()
+	fv := rv.FieldByName(s.markingField)
+
+	if !fv.IsValid() {
+		return nil, fmt.Errorf("not a field name: %s", s.markingField)
+	}
+
+	if s.singleState {
+		if fv.Kind() != reflect.String {
+			return nil, fmt.Errorf("%s is not a string field", s.markingField)
+		}
+
+		return &Marking{map[string]bool{fv.String(): true}}, nil
+	}
+
+	places := fv.Interface().(map[string]bool)
+	return &Marking{places}, nil
+}

@@ -18,6 +18,12 @@ type ChatProvider interface {
 	SendTextMessage(text string) error
 }
 
+type OutgoingMessage struct {
+	ChatID    uint   `json:"chat_id"`
+	Text      string `json:"text"`
+	ParseMode string `json:"parse_mode"`
+}
+
 type TelegramProvider struct {
 	config  config.ProviderConfig
 	message Message
@@ -43,9 +49,9 @@ func (p *TelegramProvider) GetToken() *models.Token {
 	//find token in DB or create new
 	msg := p.GetTypedMessage(p.message)
 	return &models.Token{
-		ChatId: p.getTokedId(),
+		ChatId:    p.getTokedId(),
 		FirstName: msg.Message.Chat.FirstName,
-		LastName: msg.Message.Chat.LastName,
+		LastName:  msg.Message.Chat.LastName,
 	}
 }
 
@@ -65,8 +71,8 @@ func (p *TelegramProvider) GetTypedMessage(m Message) TelegramMessage {
 
 func (p *TelegramProvider) SendTextMessage(text string) error {
 	reqBody := &OutgoingMessage{
-		ChatID: p.GetToken().ChatId,
-		Text:   text,
+		ChatID:    p.GetToken().ChatId,
+		Text:      text,
 		ParseMode: "HTML",
 	}
 
