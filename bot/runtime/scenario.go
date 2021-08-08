@@ -10,7 +10,7 @@ type Scenario struct {
 	Provider ChatProvider
 }
 
-func (s *Scenario) HandleCommand()  {
+func (s *Scenario) HandleCommand() {
 	// get state by token
 	// run state actions
 
@@ -21,7 +21,11 @@ func (s *Scenario) HandleCommand()  {
 	fmt.Println("Running actions")
 	for _, state := range states {
 		for _, action := range state.Actions {
-			action.Run(s.Provider, token, state, cmd)
+			err := action.Run(s.Provider, token, state, cmd)
+
+			if err != nil {
+				return
+			}
 		}
 	}
 }

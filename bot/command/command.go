@@ -1,7 +1,6 @@
 package command
 
 type Command interface {
-
 }
 
 type UserInputCommand struct {
@@ -9,5 +8,4 @@ type UserInputCommand struct {
 }
 
 type MockCommand struct {
-
 }

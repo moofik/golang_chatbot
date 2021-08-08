@@ -61,3 +61,39 @@ func (s *MarkingStorage) GetMarking(subject interface{}) (*Marking, error) {
 	places := fv.Interface().(map[string]bool)
 	return &Marking{places}, nil
 }
+
+func (s *MarkingStorage) SetMarking(subject interface{}, m *Marking) error {
+	rv := reflect.ValueOf(subject)
+
+	if rv.Kind() != reflect.Ptr || rv.Elem().Kind() != reflect.Struct {
+		return errors.New("v must be pointer to struct")
+	}
+
+	rv = rv.Elem()
+	fv := rv.FieldByName(s.markingField)
+
+	if !fv.IsValid() {
+		return fmt.Errorf("not a field name: %s", s.markingField)
+	}
+
+	if !fv.CanSet() {
+		return fmt.Errorf("%s is not a settable field", s.markingField)
+	}
+
+	if s.singleState {
+		if fv.Kind() != reflect.String {
+			return fmt.Errorf("%s is not a string field", s.markingField)
+		}
+
+		for name, _ := range m.Places {
+			fv.SetString(name)
+			return nil
+		}
+	}
+
+	for name, flag := range m.Places {
+		fv.SetMapIndex(reflect.ValueOf(name), reflect.ValueOf(flag))
+	}
+
+	return nil
+}

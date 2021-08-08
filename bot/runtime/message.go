@@ -9,24 +9,24 @@ type Message interface{}
 
 type TelegramMessage struct {
 	UpdateId uint `json:"update_id"`
-	Message struct{
+	Message  struct {
 		MessageId uint `json:"message_id"`
-		From struct{
-			Id uint `json:"id"`
-			IsBot bool `json:"is_bot"`
-			FirstName string `json:"first_name"`
-			LastName string `json:"last_name"`
-			UserName string `json:"username"`
+		From      struct {
+			Id           uint   `json:"id"`
+			IsBot        bool   `json:"is_bot"`
+			FirstName    string `json:"first_name"`
+			LastName     string `json:"last_name"`
+			UserName     string `json:"username"`
 			LanguageCode string `json:"language_code"`
 		} `json:"from"`
-		Chat struct{
-			Id uint `json:"id"`
+		Chat struct {
+			Id        uint   `json:"id"`
 			FirstName string `json:"first_name"`
-			LastName string `json:"last_name"`
-			UserName string `json:"username"`
-			Type string `json:"type"`
+			LastName  string `json:"last_name"`
+			UserName  string `json:"username"`
+			Type      string `json:"type"`
 		} `json:"chat"`
-		Date uint `json:"date"`
+		Date uint   `json:"date"`
 		Text string `json:"text"`
 	} `json:"message"`
 }

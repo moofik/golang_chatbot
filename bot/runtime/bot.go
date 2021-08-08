@@ -13,10 +13,9 @@ type DefaultBot struct {
 	message Message
 }
 
-func (b *DefaultBot) HandleRequest(c *gin.Context)  {
+func (b *DefaultBot) HandleRequest(c *gin.Context) {
 	cfg := config.GetScenarioConfig()
 	provider, _ := GetProvider(cfg.ProviderConfig, c)
 	s := Scenario{cfg.StateMachineConfig, provider}
 	s.HandleCommand()
 }
-

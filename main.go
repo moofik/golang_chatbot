@@ -20,10 +20,7 @@ func main() {
 
 	r := gin.Default()
 
-
-
 	r.POST("/", func(c *gin.Context) {
-
 
 		//fmt.Printf(newStr)
 		//provider.GetCommandFromRequest(c)
