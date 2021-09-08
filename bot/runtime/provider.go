@@ -3,7 +3,6 @@ package runtime
 import (
 	"bot-daedalus/bot/command"
 	"bot-daedalus/config"
-	"bot-daedalus/models"
 	"bytes"
 	"encoding/json"
 	"errors"
@@ -11,9 +10,15 @@ import (
 	"net/http"
 )
 
+const PROVIDER_TELEGRAM string = "teleram"
+const PROVIDER_VK string = "vk"
+const PROVIDER_WHATSAPP string = "whatsapp"
+const PROVIDER_FACEBOOK string = "facebook"
+
 type ChatProvider interface {
 	GetCommand() command.Command
-	GetToken() *models.Token
+	GetMessageFactory() SerializedMessageFactory
+	GetToken() TokenProxy
 	GetConfig() config.ProviderConfig
 	SendTextMessage(text string) error
 }
@@ -25,12 +30,14 @@ type OutgoingMessage struct {
 }
 
 type TelegramProvider struct {
-	config  config.ProviderConfig
-	message Message
+	tokenFactory   TokenFactory
+	messageFactory SerializedMessageFactory
+	config         config.ProviderConfig
+	message        Message
 }
 
 func (p *TelegramProvider) GetCommand() command.Command {
-	m := p.GetTypedMessage(p.message)
+	m := GetTelegramMessage(p.message)
 
 	fmt.Printf("%v\n\n", m)
 
@@ -42,36 +49,25 @@ func (p *TelegramProvider) GetCommand() command.Command {
 }
 
 func (p *TelegramProvider) getTokedId() uint {
-	return p.GetTypedMessage(p.message).Message.Chat.Id
+	return GetTelegramMessage(p.message).Message.Chat.Id
 }
 
-func (p *TelegramProvider) GetToken() *models.Token {
+func (p *TelegramProvider) GetMessageFactory() SerializedMessageFactory {
+	return p.messageFactory
+}
+
+func (p *TelegramProvider) GetToken() TokenProxy {
 	//find token in DB or create new
-	msg := p.GetTypedMessage(p.message)
-	return &models.Token{
-		ChatId:    p.getTokedId(),
-		FirstName: msg.Message.Chat.FirstName,
-		LastName:  msg.Message.Chat.LastName,
-	}
+	return p.tokenFactory.GetOrCreate(p)
 }
 
 func (p *TelegramProvider) GetConfig() config.ProviderConfig {
 	return p.config
 }
 
-func (p *TelegramProvider) GetTypedMessage(m Message) TelegramMessage {
-	buf := new(bytes.Buffer)
-	_ = json.NewEncoder(buf).Encode(m)
-
-	var telegramMessage TelegramMessage
-	_ = json.Unmarshal([]byte(buf.String()), &telegramMessage)
-
-	return telegramMessage
-}
-
 func (p *TelegramProvider) SendTextMessage(text string) error {
 	reqBody := &OutgoingMessage{
-		ChatID:    p.GetToken().ChatId,
+		ChatID:    p.GetToken().GetChatId(),
 		Text:      text,
 		ParseMode: "HTML",
 	}

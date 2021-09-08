@@ -6,17 +6,16 @@ import (
 )
 
 type StateMachineConfig struct {
-
 }
 
 type ProviderConfig struct {
-	Name string
+	Name  string
 	Token string
 }
 
 type ScenarioConfig struct {
-	Name           string
-	ProviderConfig ProviderConfig
+	Name               string
+	ProviderConfig     ProviderConfig
 	StateMachineConfig StateMachineConfig
 }
 
@@ -31,7 +30,7 @@ func GetScenarioConfig() ScenarioConfig {
 	}
 
 	providerConfig := ProviderConfig{
-		Name: viper.GetString("scenario.provider.name"),
+		Name:  viper.GetString("scenario.provider.name"),
 		Token: viper.GetString("scenario.provider.token"),
 	}
 

@@ -3,12 +3,16 @@ package runtime
 import (
 	"bot-daedalus/config"
 	"fmt"
-	"github.com/gin-gonic/gin"
 )
 
-func GetProvider(config config.ProviderConfig, c *gin.Context) (ChatProvider, error) {
+func GetProvider(config config.ProviderConfig, tf TokenFactory, mf SerializedMessageFactory) (ChatProvider, error) {
 	if config.Name == "telegram" {
-		return &TelegramProvider{config, GetMessage(c, config)}, nil
+		return &TelegramProvider{
+			tf,
+			mf,
+			config,
+			mf.GetSerializedMessage(config),
+		}, nil
 	}
 
 	return nil, fmt.Errorf("wrong provider type passed")

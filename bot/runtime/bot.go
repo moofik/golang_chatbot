@@ -2,20 +2,19 @@ package runtime
 
 import (
 	"bot-daedalus/config"
-	"github.com/gin-gonic/gin"
 )
 
 type Bot interface {
-	HandleRequest(c *gin.Context)
+	HandleRequest(mf SerializedMessageFactory)
 }
 
 type DefaultBot struct {
-	message Message
+	TokenFactory TokenFactory
 }
 
-func (b *DefaultBot) HandleRequest(c *gin.Context) {
+func (b *DefaultBot) HandleRequest(mf SerializedMessageFactory) {
 	cfg := config.GetScenarioConfig()
-	provider, _ := GetProvider(cfg.ProviderConfig, c)
+	provider, _ := GetProvider(cfg.ProviderConfig, b.TokenFactory, mf)
 	s := Scenario{cfg.StateMachineConfig, provider}
 	s.HandleCommand()
 }

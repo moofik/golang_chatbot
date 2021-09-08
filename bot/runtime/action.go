@@ -2,13 +2,12 @@ package runtime
 
 import (
 	"bot-daedalus/bot/command"
-	"bot-daedalus/models"
 	"bytes"
 	"html/template"
 )
 
 type Action interface {
-	Run(p ChatProvider, t *models.Token, s *State, c command.Command) error
+	Run(p ChatProvider, t TokenProxy, s *State, c command.Command) error
 }
 
 type SendTextMessage struct {
@@ -17,7 +16,7 @@ type SendTextMessage struct {
 
 func (a *SendTextMessage) Run(
 	p ChatProvider,
-	t *models.Token,
+	t TokenProxy,
 	s *State,
 	c command.Command,
 ) error {
@@ -27,7 +26,8 @@ func (a *SendTextMessage) Run(
 	}
 
 	var tpl bytes.Buffer
-	if err := tmpl.Execute(&tpl, t); err != nil {
+
+	if err := tmpl.Execute(&tpl, t.ToPlainStruct()); err != nil {
 		return err
 	}
 

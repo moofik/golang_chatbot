@@ -2,6 +2,8 @@ package runtime
 
 import (
 	"bot-daedalus/config"
+	"bytes"
+	"encoding/json"
 	"github.com/gin-gonic/gin"
 )
 
@@ -31,11 +33,19 @@ type TelegramMessage struct {
 	} `json:"message"`
 }
 
-func GetMessage(ctx *gin.Context, c config.ProviderConfig) Message {
+type SerializedMessageFactory interface {
+	GetSerializedMessage(c config.ProviderConfig) Message
+}
+
+type DefaultSerializedMessageFactory struct {
+	Ctx *gin.Context
+}
+
+func (f *DefaultSerializedMessageFactory) GetSerializedMessage(c config.ProviderConfig) Message {
 	if c.Name == "telegram" {
 		var json TelegramMessage
 
-		if ctx.BindJSON(&json) == nil {
+		if f.Ctx.BindJSON(&json) == nil {
 			return json
 		}
 
@@ -43,4 +53,14 @@ func GetMessage(ctx *gin.Context, c config.ProviderConfig) Message {
 	}
 
 	panic("unknown message type")
+}
+
+func GetTelegramMessage(m Message) TelegramMessage {
+	buf := new(bytes.Buffer)
+	_ = json.NewEncoder(buf).Encode(m)
+
+	var telegramMessage TelegramMessage
+	_ = json.Unmarshal([]byte(buf.String()), &telegramMessage)
+
+	return telegramMessage
 }
