@@ -25,7 +25,11 @@ func main() {
 		//fmt.Printf(newStr)
 		//provider.GetCommandFromRequest(c)
 
-		bot := runtime.DefaultBot{TokenFactory: models.TokenFactory{}}
+		bot := runtime.DefaultBot{
+			ScenarioPath: "config/scenario",
+			ScenarioName: "scenario",
+			TokenFactory: models.TokenFactory{},
+		}
 		bot.HandleRequest(&runtime.DefaultSerializedMessageFactory{Ctx: c})
 
 		c.JSON(200, gin.H{

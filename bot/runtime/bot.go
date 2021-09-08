@@ -9,11 +9,13 @@ type Bot interface {
 }
 
 type DefaultBot struct {
+	ScenarioPath string
+	ScenarioName string
 	TokenFactory TokenFactory
 }
 
 func (b *DefaultBot) HandleRequest(mf SerializedMessageFactory) {
-	cfg := config.GetScenarioConfig()
+	cfg := config.GetScenarioConfig(b.ScenarioPath, b.ScenarioName)
 	provider, _ := GetProvider(cfg.ProviderConfig, b.TokenFactory, mf)
 	s := Scenario{cfg.StateMachineConfig, provider}
 	s.HandleCommand()

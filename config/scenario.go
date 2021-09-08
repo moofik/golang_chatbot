@@ -19,9 +19,9 @@ type ScenarioConfig struct {
 	StateMachineConfig StateMachineConfig
 }
 
-func GetScenarioConfig() ScenarioConfig {
-	viper.SetConfigName("scenario")
-	viper.AddConfigPath("config/scenario")
+func GetScenarioConfig(path string, name string) ScenarioConfig {
+	viper.SetConfigName(name)
+	viper.AddConfigPath(path)
 	viper.AutomaticEnv()
 	viper.SetConfigType("yml")
 
