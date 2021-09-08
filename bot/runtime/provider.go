@@ -23,7 +23,7 @@ type ChatProvider interface {
 	SendTextMessage(text string) error
 }
 
-type OutgoingMessage struct {
+type telegramOutgoingMessage struct {
 	ChatID    uint   `json:"chat_id"`
 	Text      string `json:"text"`
 	ParseMode string `json:"parse_mode"`
@@ -66,7 +66,7 @@ func (p *TelegramProvider) GetConfig() config.ProviderConfig {
 }
 
 func (p *TelegramProvider) SendTextMessage(text string) error {
-	reqBody := &OutgoingMessage{
+	reqBody := &telegramOutgoingMessage{
 		ChatID:    p.GetToken().GetChatId(),
 		Text:      text,
 		ParseMode: "HTML",
