@@ -10,7 +10,7 @@ import (
 	"net/http"
 )
 
-const PROVIDER_TELEGRAM string = "teleram"
+const PROVIDER_TELEGRAM string = "telegram"
 const PROVIDER_VK string = "vk"
 const PROVIDER_WHATSAPP string = "whatsapp"
 const PROVIDER_FACEBOOK string = "facebook"
