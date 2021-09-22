@@ -40,3 +40,14 @@ func (d *Definition) AddTransition(transition Transition) error {
 	d.Transitions = append(d.Transitions, &transition)
 	return nil
 }
+
+func CreateDefinition(t []*Transition, InitialPlaces map[string]string, Places map[string]string) (*Definition, error) {
+	//check non existant initial place
+	//check transition doesnt have a to place that is not defined in definition places
+	//check transition doesnt have a from place that is not defined in definition places
+	return &Definition{t, InitialPlaces, Places}, nil
+}
+
+func (d *Definition) SetInitialPlaces() {
+	//test initial place is defined in places
+}

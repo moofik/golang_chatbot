@@ -95,3 +95,57 @@ func (w *DefaultWorkflow) getTransitionBlockerList(subject interface{}, marking 
 
 	return BlockerList{}
 }
+
+func (w *DefaultWorkflow) apply(subject interface{}, transition string) (*Marking, error) {
+	marking, err := w.GetMarking(subject)
+
+	if err != nil {
+		return nil, err
+	}
+
+	transitionExist := true
+	var approvedTransitions []*Transition
+	var blockerList *BlockerList
+
+	for _, t := range w.definition.Transitions {
+		if t.Name != transition {
+			continue
+		}
+
+		transitionExist = true
+		blockers := w.getTransitionBlockerList(subject, marking, t)
+
+		if blockers.empty() {
+			approvedTransitions = append(approvedTransitions, t)
+			continue
+		}
+
+		if !blockers.has(CODE_NOT_ENABLED) {
+			*blockerList = blockers
+		}
+	}
+
+	if !transitionExist {
+		return nil, &NotEnabledTransitionError{blockerList, transition}
+	}
+
+	for _, t := range approvedTransitions {
+		for _, place := range t.From {
+			err := marking.Unmark(place)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		for _, place := range t.To {
+			marking.Mark(place)
+		}
+
+		err := w.markingStorage.SetMarking(subject, marking)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return marking, nil
+}
