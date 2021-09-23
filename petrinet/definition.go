@@ -42,12 +42,36 @@ func (d *Definition) AddTransition(transition Transition) error {
 }
 
 func CreateDefinition(t []*Transition, InitialPlaces map[string]string, Places map[string]string) (*Definition, error) {
-	//check non existant initial place
+	//check non-existent initial place
+	for name, _ := range InitialPlaces {
+		if _, ok := Places[name]; !ok {
+			return nil, &NonExistentPlaceError{name}
+		}
+	}
 	//check transition doesnt have a to place that is not defined in definition places
+	for _, transition := range t {
+		for _, to := range transition.To {
+			if _, ok := Places[to]; !ok {
+				return nil, &NonExistentPlaceError{to}
+			}
+		}
+	}
 	//check transition doesnt have a from place that is not defined in definition places
+	for _, transition := range t {
+		for _, from := range transition.From {
+			if _, ok := Places[from]; !ok {
+				return nil, &NonExistentPlaceError{from}
+			}
+		}
+	}
+
 	return &Definition{t, InitialPlaces, Places}, nil
 }
 
-func (d *Definition) SetInitialPlaces() {
-	//test initial place is defined in places
+type NonExistentPlaceError struct {
+	name string
+}
+
+func (e *NonExistentPlaceError) Error() string {
+	return fmt.Sprintf("place %s does not exist in the workflow", e.name)
 }
