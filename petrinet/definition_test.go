@@ -57,7 +57,7 @@ func TestSetInitialPlaceAndPlaceIsNotDefined(t *testing.T) {
 	}
 }
 
-func TestAddTransitionAndFromPlaceIsNotDefined(t *testing.T) {
+func TestTransitionWithFromPlaceNotDefined(t *testing.T) {
 	_, err := CreateDefinition(
 		[]*Transition{
 			&Transition{
@@ -77,7 +77,7 @@ func TestAddTransitionAndFromPlaceIsNotDefined(t *testing.T) {
 	}
 }
 
-func TestAddTransitionAndToPlaceIsNotDefined(t *testing.T) {
+func TestTransitionWithToPlaceIsNotDefined(t *testing.T) {
 	_, err := CreateDefinition(
 		[]*Transition{
 			&Transition{
@@ -95,4 +95,49 @@ func TestAddTransitionAndToPlaceIsNotDefined(t *testing.T) {
 	if err == nil {
 		t.Errorf("non-existent place error expected")
 	}
+}
+
+func TestDefinitionAddPlace(t *testing.T) {
+	d, _ := CreateDefinition(nil, nil, nil)
+	d.AddPlace("x")
+
+	if len(d.Places) != 1 {
+		t.Errorf("exactly 1 place expected, got %d", len(d.Places))
+	}
+
+	if d.Places["x"] != "x" {
+		t.Errorf("expected place with name %s exist, places are: %v", "x", d.Places)
+	}
+}
+
+func TestDefinitionAddTransition(t *testing.T) {
+	d, _ := CreateDefinition(nil, nil, nil)
+	d.AddPlace("a")
+	d.AddPlace("b")
+	tr := Transition{
+		"test",
+		[]string{"a"},
+		[]string{"b"},
+	}
+	err := d.AddTransition(tr)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
+	if len(d.Transitions) != 1 {
+		t.Errorf("exactly 1 transition expected, got %d", len(d.Transitions))
+	}
+
+	if d.Transitions[0].Name != tr.Name {
+		t.Errorf("expected transition with name %s, got %s", d.Transitions[0].Name, tr.Name)
+	}
+
+	if d.Transitions[0].From[0] != tr.From[0] {
+		t.Errorf("expected transition with froms %s, got %s", d.Transitions[0].From[0], tr.From[0])
+	}
+
+	if d.Transitions[0].To[0] != tr.To[0] {
+		t.Errorf("expected transition with name %s, got %s", d.Transitions[0].To[0], tr.To[0])
+	}
+
 }

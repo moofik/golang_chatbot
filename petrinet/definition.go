@@ -65,6 +65,18 @@ func CreateDefinition(t []*Transition, InitialPlaces map[string]string, Places m
 		}
 	}
 
+	if t == nil {
+		t = []*Transition{}
+	}
+
+	if InitialPlaces == nil {
+		InitialPlaces = map[string]string{}
+	}
+
+	if Places == nil {
+		Places = map[string]string{}
+	}
+
 	return &Definition{t, InitialPlaces, Places}, nil
 }
 
