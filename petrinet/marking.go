@@ -47,7 +47,7 @@ func (s *MarkingStorage) GetMarking(subject interface{}) (*Marking, error) {
 	fv := rv.FieldByName(s.markingField)
 
 	if !fv.IsValid() {
-		return nil, fmt.Errorf("not a field name: %s", s.markingField)
+		return nil, fmt.Errorf("not a field Name: %s", s.markingField)
 	}
 
 	if s.singleState {
@@ -73,7 +73,7 @@ func (s *MarkingStorage) SetMarking(subject interface{}, m *Marking) error {
 	fv := rv.FieldByName(s.markingField)
 
 	if !fv.IsValid() {
-		return fmt.Errorf("not a field name: %s", s.markingField)
+		return fmt.Errorf("not a field Name: %s", s.markingField)
 	}
 
 	if !fv.CanSet() {

@@ -4,59 +4,59 @@ import "fmt"
 
 type Workflow interface {
 	// GetMarking is used to get current workflow state
-	GetMarking(subject interface{}) (Marking, error)
+	GetMarking(subject interface{}) (*Marking, error)
 	// CanFire checks whether we can fire a transition
-	CanFire(subject interface{}, transition string) bool
+	CanFire(subject interface{}, transition string) (bool, error)
 	// Fire fires a transition
-	Fire(subject interface{}, transition string)
-	// GetAllowedTransitions is used to get allowed transitions for current subject's state
-	GetAllowedTransitions(subject interface{})
-	// GetDefinition gets workflow definition
-	GetDefinition()
+	Fire(subject interface{}, transition string) (*Marking, error)
+	// GetTransitionBlockerList is used to get blockers for transition for current subject's state
+	GetTransitionBlockerList(subject interface{}, marking *Marking, transition *Transition) BlockerList
+	// GetDefinition gets workflow Definition
+	GetDefinition() *Definition
 }
 
 type DefaultWorkflow struct {
-	definition     Definition
-	markingStorage MarkingStorage
-	name           string
+	Definition     *Definition
+	MarkingStorage *MarkingStorage
+	Name           string
 }
 
 func (w *DefaultWorkflow) GetMarking(subject interface{}) (*Marking, error) {
-	marking, err := w.markingStorage.GetMarking(subject)
+	marking, err := w.MarkingStorage.GetMarking(subject)
 
 	if err != nil {
 		return nil, err
 	}
 
 	if len(marking.Places) == 0 {
-		if len(w.definition.InitialPlaces) == 0 {
-			return nil, fmt.Errorf("the Marking is empty and there is no initial place for workflow %s", w.name)
+		if len(w.Definition.InitialPlaces) == 0 {
+			return nil, fmt.Errorf("the Marking is empty and there is no initial place for workflow %s", w.Name)
 		}
 
-		for _, place := range w.definition.InitialPlaces {
+		for _, place := range w.Definition.InitialPlaces {
 			marking.Mark(place)
 		}
 
-		err := w.markingStorage.SetMarking(subject, marking)
+		err := w.MarkingStorage.SetMarking(subject, marking)
 
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	for name, _ := range marking.Places {
-		if len(w.definition.Places) == 0 {
+	for name := range marking.Places {
+		if len(w.Definition.Places) == 0 {
 			return nil, fmt.Errorf(
 				"it seems you forgot to add places to the workflow %s",
 				name,
 			)
 		}
 
-		if _, ok := w.definition.Places[name]; !ok {
+		if _, ok := w.Definition.Places[name]; !ok {
 			return nil, fmt.Errorf(
 				"place %s is not valid for workflow %s",
 				name,
-				w.name,
+				w.Name,
 			)
 		}
 	}
@@ -71,12 +71,12 @@ func (w *DefaultWorkflow) CanFire(subject interface{}, transition string) (bool,
 		return false, err
 	}
 
-	for _, t := range w.definition.Transitions {
+	for _, t := range w.Definition.Transitions {
 		if transition != t.Name {
 			continue
 		}
 
-		blockerList := w.getTransitionBlockerList(subject, marking, t)
+		blockerList := w.GetTransitionBlockerList(subject, marking, t)
 
 		if blockerList.empty() {
 			return true, nil
@@ -86,7 +86,7 @@ func (w *DefaultWorkflow) CanFire(subject interface{}, transition string) (bool,
 	return false, nil
 }
 
-func (w *DefaultWorkflow) getTransitionBlockerList(subject interface{}, marking *Marking, transition *Transition) BlockerList {
+func (w *DefaultWorkflow) GetTransitionBlockerList(subject interface{}, marking *Marking, transition *Transition) BlockerList {
 	for _, place := range transition.From {
 		if !marking.Has(place) {
 			return BlockerList{blockers: []*Blocker{createNotEnabledBlocker()}}
@@ -96,7 +96,7 @@ func (w *DefaultWorkflow) getTransitionBlockerList(subject interface{}, marking 
 	return BlockerList{}
 }
 
-func (w *DefaultWorkflow) apply(subject interface{}, transition string) (*Marking, error) {
+func (w *DefaultWorkflow) Fire(subject interface{}, transition string) (*Marking, error) {
 	marking, err := w.GetMarking(subject)
 
 	if err != nil {
@@ -107,13 +107,13 @@ func (w *DefaultWorkflow) apply(subject interface{}, transition string) (*Markin
 	var approvedTransitions []*Transition
 	var blockerList *BlockerList
 
-	for _, t := range w.definition.Transitions {
+	for _, t := range w.Definition.Transitions {
 		if t.Name != transition {
 			continue
 		}
 
 		transitionExist = true
-		blockers := w.getTransitionBlockerList(subject, marking, t)
+		blockers := w.GetTransitionBlockerList(subject, marking, t)
 
 		if blockers.empty() {
 			approvedTransitions = append(approvedTransitions, t)
@@ -141,11 +141,15 @@ func (w *DefaultWorkflow) apply(subject interface{}, transition string) (*Markin
 			marking.Mark(place)
 		}
 
-		err := w.markingStorage.SetMarking(subject, marking)
+		err := w.MarkingStorage.SetMarking(subject, marking)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	return marking, nil
+}
+
+func (w *DefaultWorkflow) GetDefinition() *Definition {
+	return w.Definition
 }

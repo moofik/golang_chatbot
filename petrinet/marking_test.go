@@ -24,11 +24,11 @@ func TestGetMarkingForMultistate(t *testing.T) {
 	}
 
 	if !marking.Has("place1") {
-		t.Errorf("current multi state marking place should have place with name 'place1'")
+		t.Errorf("current multi state marking place should have place with Name 'place1'")
 	}
 
 	if !marking.Has("place2") {
-		t.Errorf("current multi state marking place should have place with name 'place2'")
+		t.Errorf("current multi state marking place should have place with Name 'place2'")
 	}
 }
 
@@ -54,7 +54,7 @@ func TestGetMarkingForSinglestate(t *testing.T) {
 	}
 
 	if !marking.Has("place") {
-		t.Errorf("current single state marking place should have place with name 'place'")
+		t.Errorf("current single state marking place should have place with Name 'place'")
 	}
 }
 

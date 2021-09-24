@@ -19,7 +19,7 @@ func TestAddPlaces(t *testing.T) {
 	}
 
 	if d.Places["a"] != "a" || d.Places["b"] != "b" {
-		t.Errorf("expected places is not defined in places of definition %v, places are: ", d.Places)
+		t.Errorf("expected places is not defined in places of Definition %v, places are: ", d.Places)
 	}
 }
 
@@ -106,7 +106,7 @@ func TestDefinitionAddPlace(t *testing.T) {
 	}
 
 	if d.Places["x"] != "x" {
-		t.Errorf("expected place with name %s exist, places are: %v", "x", d.Places)
+		t.Errorf("expected place with Name %s exist, places are: %v", "x", d.Places)
 	}
 }
 
@@ -119,7 +119,7 @@ func TestDefinitionAddTransition(t *testing.T) {
 		[]string{"a"},
 		[]string{"b"},
 	}
-	err := d.AddTransition(tr)
+	err := d.AddTransition(&tr)
 	if err != nil {
 		t.Errorf(err.Error())
 	}
@@ -129,7 +129,7 @@ func TestDefinitionAddTransition(t *testing.T) {
 	}
 
 	if d.Transitions[0].Name != tr.Name {
-		t.Errorf("expected transition with name %s, got %s", d.Transitions[0].Name, tr.Name)
+		t.Errorf("expected transition with Name %s, got %s", d.Transitions[0].Name, tr.Name)
 	}
 
 	if d.Transitions[0].From[0] != tr.From[0] {
@@ -137,7 +137,7 @@ func TestDefinitionAddTransition(t *testing.T) {
 	}
 
 	if d.Transitions[0].To[0] != tr.To[0] {
-		t.Errorf("expected transition with name %s, got %s", d.Transitions[0].To[0], tr.To[0])
+		t.Errorf("expected transition with Name %s, got %s", d.Transitions[0].To[0], tr.To[0])
 	}
 
 }
