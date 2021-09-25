@@ -25,6 +25,14 @@ func (l *BlockerList) next() (*Blocker, bool) {
 	return nil, false
 }
 
+func (l *BlockerList) current() *Blocker {
+	if l.index != 0 {
+		return l.blockers[l.index-1]
+	}
+
+	return nil
+}
+
 func (l *BlockerList) has(code string) bool {
 	for _, blocker := range l.blockers {
 		if code == blocker.code {
@@ -37,4 +45,8 @@ func (l *BlockerList) has(code string) bool {
 
 func (l *BlockerList) empty() bool {
 	return len(l.blockers) == 0
+}
+
+func (l *BlockerList) count() int {
+	return len(l.blockers)
 }

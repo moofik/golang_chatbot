@@ -1,6 +1,8 @@
 package petrinet
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type Workflow interface {
 	// GetMarking is used to get current workflow state
@@ -47,8 +49,9 @@ func (w *DefaultWorkflow) GetMarking(subject interface{}) (*Marking, error) {
 	for name := range marking.Places {
 		if len(w.Definition.Places) == 0 {
 			return nil, fmt.Errorf(
-				"it seems you forgot to add places to the workflow %s",
+				"it seems you forgot to add place '%s' to the workflow '%s'",
 				name,
+				w.Name,
 			)
 		}
 
@@ -64,7 +67,7 @@ func (w *DefaultWorkflow) GetMarking(subject interface{}) (*Marking, error) {
 	return marking, nil
 }
 
-func (w *DefaultWorkflow) CanFire(subject interface{}, transition string) (bool, error) {
+func (w *DefaultWorkflow) CanFire(subject interface{}, transitionName string) (bool, error) {
 	marking, err := w.GetMarking(subject)
 
 	if err != nil {
@@ -72,7 +75,7 @@ func (w *DefaultWorkflow) CanFire(subject interface{}, transition string) (bool,
 	}
 
 	for _, t := range w.Definition.Transitions {
-		if transition != t.Name {
+		if transitionName != t.Name {
 			continue
 		}
 
@@ -86,29 +89,66 @@ func (w *DefaultWorkflow) CanFire(subject interface{}, transition string) (bool,
 	return false, nil
 }
 
-func (w *DefaultWorkflow) GetTransitionBlockerList(subject interface{}, marking *Marking, transition *Transition) BlockerList {
+func (w *DefaultWorkflow) GetTransitionBlockerList(subject interface{}, marking *Marking, transition *Transition) *BlockerList {
 	for _, place := range transition.From {
 		if !marking.Has(place) {
-			return BlockerList{blockers: []*Blocker{createNotEnabledBlocker()}}
+			return &BlockerList{blockers: []*Blocker{createNotEnabledBlocker()}}
 		}
 	}
 
-	return BlockerList{}
+	return &BlockerList{}
 }
 
-func (w *DefaultWorkflow) Fire(subject interface{}, transition string) (*Marking, error) {
+func (w *DefaultWorkflow) BuildTransitionBlockerList(subject interface{}, transitionName string) (*BlockerList, error) {
+	transitions := w.Definition.Transitions
 	marking, err := w.GetMarking(subject)
 
 	if err != nil {
 		return nil, err
 	}
 
-	transitionExist := true
+	var blockerList *BlockerList
+
+	for _, t := range transitions {
+		if t.Name != transitionName {
+			continue
+		}
+
+		blockerList = w.GetTransitionBlockerList(subject, marking, t)
+
+		if blockerList.empty() {
+			return blockerList, nil
+		}
+
+		if !blockerList.has(CODE_NOT_ENABLED) {
+			return blockerList, nil
+		}
+	}
+
+	if blockerList == nil {
+		return nil, fmt.Errorf("transition name %s is not defined for workflow %s", transitionName, w.Name)
+	}
+
+	return blockerList, nil
+}
+
+func (w *DefaultWorkflow) Fire(subject interface{}, transitionName string) (*Marking, TransitionError) {
+	marking, err := w.GetMarking(subject)
+
+	if err != nil {
+		return nil, &GenericTransitionError{
+			nil,
+			transitionName,
+			err,
+		}
+	}
+
+	transitionExist := false
 	var approvedTransitions []*Transition
 	var blockerList *BlockerList
 
 	for _, t := range w.Definition.Transitions {
-		if t.Name != transition {
+		if t.Name != transitionName {
 			continue
 		}
 
@@ -120,20 +160,41 @@ func (w *DefaultWorkflow) Fire(subject interface{}, transition string) (*Marking
 			continue
 		}
 
+		if blockerList == nil {
+			blockerList = blockers
+			continue
+		}
+
 		if !blockers.has(CODE_NOT_ENABLED) {
-			*blockerList = blockers
+			blockerList = blockers
 		}
 	}
 
 	if !transitionExist {
-		return nil, &NotEnabledTransitionError{blockerList, transition}
+		return nil, &NotDefinedTransitionError{
+			blockerList,
+			transitionName,
+			w.Name,
+		}
+	}
+
+	if approvedTransitions == nil {
+		return nil, &NotEnabledTransitionError{
+			blockerList,
+			transitionName,
+			w.Name,
+		}
 	}
 
 	for _, t := range approvedTransitions {
 		for _, place := range t.From {
 			err := marking.Unmark(place)
 			if err != nil {
-				return nil, err
+				return nil, &GenericTransitionError{
+					BlockerList:    blockerList,
+					TransitionName: transitionName,
+					innerError:     err,
+				}
 			}
 		}
 
@@ -143,7 +204,11 @@ func (w *DefaultWorkflow) Fire(subject interface{}, transition string) (*Marking
 
 		err := w.MarkingStorage.SetMarking(subject, marking)
 		if err != nil {
-			return nil, err
+			return nil, &GenericTransitionError{
+				BlockerList:    blockerList,
+				TransitionName: transitionName,
+				innerError:     err,
+			}
 		}
 	}
 

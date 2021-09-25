@@ -11,6 +11,10 @@ type Marking struct {
 }
 
 func (m *Marking) Mark(place string) {
+	if m.Places == nil {
+		m.Places = map[string]bool{}
+	}
+
 	m.Places[place] = true
 }
 
@@ -19,9 +23,11 @@ func (m *Marking) Unmark(place string) error {
 
 	if ok {
 		delete(m.Places, place)
+	} else {
+		return fmt.Errorf("place not found in mark")
 	}
 
-	return fmt.Errorf("place not found in mark")
+	return nil
 }
 
 func (m *Marking) Has(place string) bool {
@@ -59,6 +65,7 @@ func (s *MarkingStorage) GetMarking(subject interface{}) (*Marking, error) {
 	}
 
 	places := fv.Interface().(map[string]bool)
+
 	return &Marking{places}, nil
 }
 
@@ -89,6 +96,10 @@ func (s *MarkingStorage) SetMarking(subject interface{}, m *Marking) error {
 			fv.SetString(name)
 			return nil
 		}
+	}
+
+	if fv.IsNil() {
+		fv.Set(reflect.MakeMap(fv.Type()))
 	}
 
 	for name, flag := range m.Places {

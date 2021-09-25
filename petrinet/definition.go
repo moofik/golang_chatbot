@@ -1,6 +1,9 @@
 package petrinet
 
-import "fmt"
+import (
+	"fmt"
+	"sort"
+)
 
 type Definition struct {
 	Transitions   []*Transition
@@ -9,12 +12,16 @@ type Definition struct {
 }
 
 func (d *Definition) AddPlace(p string) {
-	if len(d.Places) == 0 || len(d.InitialPlaces) == 0 {
-		d.InitialPlaces = map[string]string{"p": p}
+	if d.Places == nil {
+		d.Places = map[string]string{}
 	}
 
-	if len(d.Places) == 0 {
-		d.Places = map[string]string{}
+	if d.InitialPlaces == nil {
+		d.InitialPlaces = map[string]string{}
+	}
+
+	if len(d.Places) == 0 || len(d.InitialPlaces) == 0 {
+		d.InitialPlaces = map[string]string{p: p}
 	}
 
 	d.Places[p] = p
@@ -82,11 +89,14 @@ func CreateDefinition(Transitions []*Transition, InitialPlaces map[string]string
 	}
 
 	d := &Definition{nil, nil, nil}
-
-	for place := range Places {
-		d.AddPlace(place)
+	keys := make([]string, 0)
+	for k, _ := range Places {
+		keys = append(keys, k)
 	}
-
+	sort.Strings(keys)
+	for _, k := range keys {
+		d.AddPlace(k)
+	}
 	for _, t := range Transitions {
 		err := d.AddTransition(t)
 		if err != nil {
