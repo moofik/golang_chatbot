@@ -10,9 +10,9 @@ type Workflow interface {
 	// CanFire checks whether we can fire a transition
 	CanFire(subject interface{}, transition string) (bool, error)
 	// Fire fires a transition
-	Fire(subject interface{}, transition string) (*Marking, error)
+	Fire(subject interface{}, transition string) (*Marking, TransitionError)
 	// GetTransitionBlockerList is used to get blockers for transition for current subject's state
-	GetTransitionBlockerList(subject interface{}, marking *Marking, transition *Transition) BlockerList
+	GetTransitionBlockerList(subject interface{}, marking *Marking, transition *Transition) *BlockerList
 	// GetDefinition gets workflow Definition
 	GetDefinition() *Definition
 }

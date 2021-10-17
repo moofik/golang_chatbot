@@ -1,31 +1,291 @@
 package runtime
 
 import (
-	"bot-daedalus/config"
+	"bot-daedalus/bot/command"
+	"bot-daedalus/petrinet"
 	"fmt"
+	"github.com/spf13/viper"
+	"reflect"
 )
 
 type Scenario struct {
-	Config   config.StateMachineConfig
+	petrinet.Workflow
 	Provider ChatProvider
+	States   map[string]*State
+	DelayedTransitionRepository
 }
 
-func (s *Scenario) HandleCommand() {
-	// get state by token
-	// run state actions
+func (s *Scenario) GetCurrentState(token TokenProxy) *State {
+	marking, err := s.Workflow.GetMarking(token)
 
-	states := GetStates(s.Config)
-	cmd := s.Provider.GetCommand()
-	token := s.Provider.GetToken()
-
-	fmt.Println("Running actions")
-	for _, state := range states {
-		for _, action := range state.Actions {
-			err := action.Run(s.Provider, token, state, cmd)
-
-			if err != nil {
-				return
+	if err != nil {
+		panic(err)
+	}
+	for place, state := range s.States {
+		for markingPlace := range marking.Places {
+			if markingPlace == place {
+				return state
 			}
 		}
 	}
+
+	return nil
+}
+
+func (s *Scenario) HandleCommand() TokenProxy {
+	// get state by token
+	// run state actions
+	token := s.Provider.GetToken()
+	currentState := s.GetCurrentState(token)
+	cmd := s.Provider.GetCommand(currentState)
+
+	if cmd == nil {
+		return token
+	}
+
+	transition, err := currentState.GetTransition(cmd)
+
+	if err != nil {
+		// handle state error
+		panic(err.Error())
+	}
+
+	can, err := s.Workflow.CanFire(token, transition.Name)
+
+	if can {
+		newState := s.States[transition.To[0]]
+		err := newState.Execute(token, s.Provider, cmd)
+		if err != nil {
+			panic(err.Error())
+			//handle action error
+		}
+		_, err = s.Workflow.Fire(token, transition.Name)
+		if err != nil {
+			panic(err.Error())
+			//handle state error
+		}
+	}
+
+	if err != nil || !can {
+		panic(err.Error())
+		// handle state error
+	}
+
+	return token
+}
+
+type ScenarioBuilder struct {
+	ActionRegistry   func(string, map[string]string) Action
+	Repository       DelayedTransitionRepository
+	Provider         ChatProvider
+	states           map[string]*State
+	currentPlaceName string
+}
+
+func (b *ScenarioBuilder) BuildScenario(path string, name string) (*Scenario, error) {
+	viper.SetConfigName(name)
+	viper.AddConfigPath(path)
+	viper.AutomaticEnv()
+	viper.SetConfigType("yml")
+
+	if err := viper.ReadInConfig(); err != nil {
+		fmt.Printf("Error reading config file, %s", err)
+	}
+
+	statesConfig := viper.Get("scenario.states")
+	statesConfigValue := reflect.ValueOf(statesConfig)
+
+	b.walk(statesConfigValue)
+
+	markingStorage := &petrinet.MarkingStorage{
+		SingleState:  true,
+		MarkingField: "State",
+	}
+	definition := &petrinet.Definition{
+		Transitions:   nil,
+		InitialPlaces: nil,
+		Places:        nil,
+	}
+
+	for _, state := range b.states {
+		definition.AddPlace(state.Name)
+	}
+
+	for _, state := range b.states {
+		transition, hasNext := state.TransitionStorage.Next()
+		err := definition.AddTransition(transition)
+		if err != nil {
+			return nil, err
+		}
+
+		if !hasNext {
+			break
+		}
+	}
+
+	workflow := &petrinet.DefaultWorkflow{
+		Definition:     definition,
+		MarkingStorage: markingStorage,
+		Name:           "BotWorkflow",
+	}
+
+	return &Scenario{
+		workflow,
+		b.Provider,
+		b.states,
+		b.Repository,
+	}, nil
+}
+
+func (b *ScenarioBuilder) walk(v reflect.Value) {
+	//fmt.Printf("Visiting %v\n", v)
+	// Indirect through pointers and interfaces
+	for v.Kind() == reflect.Ptr || v.Kind() == reflect.Interface {
+		v = v.Elem()
+	}
+
+	var ts *TransitionStorage
+	var actions []Action
+	b.currentPlaceName = ""
+
+	switch v.Kind() {
+	case reflect.Array, reflect.Slice:
+		for i := 0; i < v.Len(); i++ {
+			b.walk(v.Index(i))
+		}
+	case reflect.Map:
+		for _, k := range v.MapKeys() {
+			if k.Elem().String() == "name" {
+				b.currentPlaceName = v.MapIndex(k).Elem().String()
+			}
+		}
+
+		if b.currentPlaceName == "" {
+			panic("state without name detected")
+		}
+
+		for _, k := range v.MapKeys() {
+			if k.Elem().String() == "actions" {
+				actions = b.walkActions(v.MapIndex(k))
+			}
+
+			if k.Elem().String() == "transitions" {
+				ts = b.walkTransitions(v.MapIndex(k))
+			}
+		}
+	default:
+		// handle other types
+	}
+
+	if b.currentPlaceName != "" && ts != nil {
+		if b.states == nil {
+			b.states = map[string]*State{}
+		}
+
+		b.states[b.currentPlaceName] = &State{
+			Name:              b.currentPlaceName,
+			Actions:           actions,
+			TransitionStorage: ts,
+		}
+	}
+}
+
+func (b *ScenarioBuilder) walkActions(v reflect.Value) []Action {
+	for v.Kind() == reflect.Ptr || v.Kind() == reflect.Interface {
+		v = v.Elem()
+	}
+
+	var actions []Action
+
+	for _, k := range v.MapKeys() {
+		name := ""
+		innerMap := v.MapIndex(k).Elem()
+		needParams := false
+		params := make(map[string]string)
+
+		for _, kk := range innerMap.MapKeys() {
+			if kk.Elem().String() == "name" {
+				name = innerMap.MapIndex(kk).Elem().String()
+			}
+
+			if kk.Elem().String() == "params" {
+				needParams = true
+				reflectParams := innerMap.MapIndex(kk).Elem()
+				for _, kk := range reflectParams.MapKeys() {
+					params[kk.Elem().String()] = reflectParams.MapIndex(kk).Elem().String()
+				}
+			}
+		}
+
+		if (len(params) > 0 || !needParams) && name != "" {
+			actions = append(actions, CreateAction(name, params, b.ActionRegistry))
+		}
+	}
+
+	return actions
+}
+
+func (b *ScenarioBuilder) walkTransitions(v reflect.Value) *TransitionStorage {
+	for v.Kind() == reflect.Ptr || v.Kind() == reflect.Interface {
+		v = v.Elem()
+	}
+
+	ts := &TransitionStorage{
+		index:         0,
+		transitionMap: nil,
+	}
+
+	// iterate over transitions
+	for i := 0; i < v.Len(); i++ {
+		tr := v.Index(i).Elem()
+		stateTo := ""
+		name := ""
+		var commands []command.Command
+
+		for _, kk := range tr.MapKeys() {
+			if kk.Elem().String() == "state_to" {
+				stateTo = tr.MapIndex(kk).Elem().String()
+			}
+
+			if kk.Elem().String() == "name" {
+				name = tr.MapIndex(kk).Elem().String()
+			}
+		}
+
+		for _, kk := range tr.MapKeys() {
+			if kk.Elem().String() == "command" {
+				cmdMap := tr.MapIndex(kk).Elem()
+
+				cmdType := ""
+				var arguments []interface{} = nil
+
+				for _, val := range cmdMap.MapKeys() {
+					if val.Elem().String() == "type" {
+						cmdType = cmdMap.MapIndex(val).Elem().String()
+					}
+
+					if val.Elem().String() == "arguments" {
+						arguments = cmdMap.MapIndex(val).Elem().Interface().([]interface{})
+					}
+				}
+
+				if cmdType != "" {
+					commands = append(commands, command.CreateCommand(cmdType, b.currentPlaceName, arguments))
+				}
+			}
+		}
+
+		if name != "" && stateTo != "" {
+			t := &petrinet.Transition{
+				Name: name,
+				From: []string{b.currentPlaceName},
+				To:   []string{stateTo},
+			}
+			for _, c := range commands {
+				ts.Add(c, t)
+			}
+		}
+	}
+
+	return ts
 }

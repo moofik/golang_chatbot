@@ -3,6 +3,7 @@ package main
 import (
 	"bot-daedalus/bot/runtime"
 	"bot-daedalus/models"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -20,23 +21,21 @@ func main() {
 		return
 	}
 
-	r := gin.Default()
-
-	r.POST("/", func(c *gin.Context) {
+	handler := func(c *gin.Context) {
 		//fmt.Printf(newStr)
 		//provider.GetCommandFromRequest(c)
-
+		fmt.Println("NEW HANDLE REQUEST")
 		bot := runtime.DefaultBot{
-			ScenarioPath: "config/scenario",
-			ScenarioName: "scenario",
-			TokenFactory: models.TokenFactory{},
+			ScenarioPath:    "config/scenario",
+			ScenarioName:    "scenario",
+			TokenFactory:    models.TokenFactory{DB: db},
+			TokenRepository: models.TokenRepository{DB: db},
 		}
 		bot.HandleRequest(&runtime.DefaultSerializedMessageFactory{Ctx: c})
+	}
 
-		c.JSON(200, gin.H{
-			"message": "hello",
-		})
-	})
+	r := gin.Default()
+	r.POST("/", handler)
 
 	err = r.Run()
 	if err != nil {

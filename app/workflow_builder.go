@@ -1,14 +1,32 @@
 package app
 
 import (
-	"bot-daedalus/config"
+	"bot-daedalus/bot/runtime"
 	"bot-daedalus/petrinet"
 )
 
-//skeleton
-func BuildWorkflow(config.StateMachineConfig) petrinet.Workflow {
+func BuildWorkflow(states []*runtime.State) petrinet.Workflow {
+	d, _ := buildDefinition(states)
+
 	return &petrinet.DefaultWorkflow{
-		Definition: &petrinet.Definition{nil, nil, nil},
+		Definition: d,
 		Name:       "test",
 	}
+}
+
+func buildDefinition(states []*runtime.State) (*petrinet.Definition, error) {
+	d, _ := petrinet.CreateDefinition(nil, nil, nil)
+
+	for _, state := range states {
+		d.AddPlace(state.Name)
+
+		for _, transition := range state.Transitions {
+			err := d.AddTransition(transition)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	return d, nil
 }

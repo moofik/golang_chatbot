@@ -9,14 +9,28 @@ type Bot interface {
 }
 
 type DefaultBot struct {
-	ScenarioPath string
-	ScenarioName string
-	TokenFactory TokenFactory
+	ScenarioPath    string
+	ScenarioName    string
+	TokenFactory    TokenFactory
+	TokenRepository TokenRepository
 }
 
 func (b *DefaultBot) HandleRequest(mf SerializedMessageFactory) {
 	cfg := config.GetScenarioConfig(b.ScenarioPath, b.ScenarioName)
-	provider, _ := GetProvider(cfg.ProviderConfig, b.TokenFactory, mf)
-	s := Scenario{cfg.StateMachineConfig, provider}
-	s.HandleCommand()
+	provider, _ := GetProvider(cfg.ProviderConfig, cfg.Name, b.TokenFactory, mf)
+
+	sbuilder := ScenarioBuilder{
+		ActionRegistry: nil,
+		Repository:     nil,
+		Provider:       provider,
+		states:         nil,
+	}
+	s, err := sbuilder.BuildScenario(b.ScenarioPath, b.ScenarioName)
+
+	if err != nil {
+		panic(err)
+	}
+
+	token := s.HandleCommand()
+	b.TokenRepository.Persist(token)
 }

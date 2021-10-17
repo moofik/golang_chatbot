@@ -1,25 +1,45 @@
 package runtime
 
 import (
-	"bot-daedalus/config"
+	"bot-daedalus/bot/command"
+	"bot-daedalus/petrinet"
+	"fmt"
 )
 
 type State struct {
-	Name        string
-	Actions     []Action
-	Transitions map[string]string
+	Name              string
+	Actions           []Action
+	TransitionStorage *TransitionStorage
 }
 
-func GetStates(c config.StateMachineConfig) []*State {
-	actions := []Action{
-		&SendTextMessage{"Привет {{.FirstName}} {{.LastName}}. Я нахожусь в режиме простоя. Сейчас я не могу тебе ничем помочь."},
+func (s *State) GetTransition(command command.Command) (*petrinet.Transition, StateError) {
+	transition := s.TransitionStorage.FindTransitionByCommand(command)
+	if transition == nil {
+		return nil, fmt.Errorf("transition not found for state %s and command %s", s.Name, command.Debug())
+	}
+	return transition, nil
+}
+
+func (s *State) Execute(token TokenProxy, provider ChatProvider, command command.Command) ActionError {
+	for _, action := range s.Actions {
+		err := action.Run(provider, token, s, command)
+
+		if err != nil {
+			return err
+		}
 	}
 
-	return []*State{
-		&State{
-			"mock",
-			actions,
-			map[string]string{},
-		},
-	}
+	return nil
+}
+
+type StateError interface {
+	error
+}
+
+type GenericStateError struct {
+	innerError error
+}
+
+func (m *GenericStateError) Error() string {
+	return m.innerError.Error()
 }

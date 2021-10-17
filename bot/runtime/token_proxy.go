@@ -15,3 +15,9 @@ type TokenProxy interface {
 type TokenFactory interface {
 	GetOrCreate(p ChatProvider) TokenProxy
 }
+
+type TokenRepository interface {
+	FindByChatIdAndScenario(chatId int, scenario string) TokenProxy
+	Persist(token TokenProxy)
+	FindByScenario(scenario string) []TokenProxy
+}

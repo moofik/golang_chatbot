@@ -31,7 +31,7 @@ func (d *Definition) AddTransition(transition *Transition) error {
 	for _, from := range transition.From {
 		if _, ok := d.Places[from]; !ok {
 			return fmt.Errorf(
-				"place %s referenced in transition %s does not exist",
+				"from place %s referenced in transition %s does not exist",
 				from,
 				transition.Name,
 			)
@@ -41,7 +41,7 @@ func (d *Definition) AddTransition(transition *Transition) error {
 	for _, to := range transition.To {
 		if _, ok := d.Places[to]; !ok {
 			return fmt.Errorf(
-				"place %s referenced in transition %s does not exist",
+				"to place %s referenced in transition %s does not exist",
 				to,
 				transition.Name,
 			)

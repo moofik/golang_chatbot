@@ -5,10 +5,11 @@ import (
 	"fmt"
 )
 
-func GetProvider(config config.ProviderConfig, tf TokenFactory, mf SerializedMessageFactory) (ChatProvider, error) {
+func GetProvider(config config.ProviderConfig, scenarioName string, tf TokenFactory, mf SerializedMessageFactory) (ChatProvider, error) {
 	if config.Name == "telegram" {
 		return &TelegramProvider{
 			tf,
+			scenarioName,
 			mf,
 			config,
 			mf.GetSerializedMessage(config),

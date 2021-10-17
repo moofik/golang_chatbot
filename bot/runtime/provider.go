@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 )
 
@@ -16,36 +15,52 @@ const PROVIDER_WHATSAPP string = "whatsapp"
 const PROVIDER_FACEBOOK string = "facebook"
 
 type ChatProvider interface {
-	GetCommand() command.Command
+	GetCommand(state *State) command.Command
 	GetMessageFactory() SerializedMessageFactory
+	GetMessage() Message
 	GetToken() TokenProxy
 	GetConfig() config.ProviderConfig
-	SendTextMessage(text string) error
+	GetScenarioName() string
+	SendTextMessage(text string, ctx ProviderContext) error
 }
 
 type telegramOutgoingMessage struct {
-	ChatID    uint   `json:"chat_id"`
-	Text      string `json:"text"`
-	ParseMode string `json:"parse_mode"`
+	ChatID      uint                             `json:"chat_id"`
+	Text        string                           `json:"text"`
+	ParseMode   string                           `json:"parse_mode"`
+	ReplyMarkup map[string][][]map[string]string `json:"reply_markup,omitempty"`
 }
 
 type TelegramProvider struct {
 	tokenFactory   TokenFactory
+	scenarioName   string
 	messageFactory SerializedMessageFactory
 	config         config.ProviderConfig
 	message        Message
 }
 
-func (p *TelegramProvider) GetCommand() command.Command {
+func (p *TelegramProvider) GetCommand(state *State) command.Command {
 	m := GetTelegramMessage(p.message)
 
-	fmt.Printf("%v\n\n", m)
-
-	if m.Message.Text[0] == '/' {
-		return &command.UserInputCommand{Text: m.Message.Text}
+	if m.Message.Text == "" {
+		return nil
 	}
 
-	return &command.MockCommand{}
+	if m.Message.Text != "" && m.Message.Text[0] == '/' {
+		var dataSlice []string = []string{m.Message.Text}
+		var interfaceSlice []interface{} = make([]interface{}, len(dataSlice))
+		for i, d := range dataSlice {
+			interfaceSlice[i] = d
+		}
+		return command.CreateCommand("button", state.Name, interfaceSlice)
+	}
+
+	var dataSlice []string = []string{m.Message.Text}
+	var interfaceSlice []interface{} = make([]interface{}, len(dataSlice))
+	for i, d := range dataSlice {
+		interfaceSlice[i] = d
+	}
+	return command.CreateCommand("text_input", state.Name, interfaceSlice)
 }
 
 func (p *TelegramProvider) getTokedId() uint {
@@ -65,11 +80,34 @@ func (p *TelegramProvider) GetConfig() config.ProviderConfig {
 	return p.config
 }
 
-func (p *TelegramProvider) SendTextMessage(text string) error {
+func (p *TelegramProvider) GetScenarioName() string {
+	return p.scenarioName
+}
+
+func (p *TelegramProvider) GetMessage() Message {
+	return p.message
+}
+
+func (p *TelegramProvider) SendTextMessage(text string, ctx ProviderContext) error {
+	buttons := ctx.State.TransitionStorage.AllButtonCommands()
+	var buttonsSlice []map[string]string
+	for _, button := range buttons {
+		buttonsSlice = append(buttonsSlice, map[string]string{
+			"text":          button.GetCaption(),
+			"callback_data": button.GetCommand(),
+		})
+	}
+
 	reqBody := &telegramOutgoingMessage{
 		ChatID:    p.GetToken().GetChatId(),
 		Text:      text,
 		ParseMode: "HTML",
+	}
+
+	if len(buttonsSlice) > 0 {
+		reqBody.ReplyMarkup = map[string][][]map[string]string{
+			"inline_keyboard": {buttonsSlice},
+		}
 	}
 
 	reqBytes, err := json.Marshal(reqBody)
@@ -78,9 +116,8 @@ func (p *TelegramProvider) SendTextMessage(text string) error {
 		return err
 	}
 
-	fmt.Println("Run send text message action")
 	url := "https://api.telegram.org/bot" + p.GetConfig().Token + "/sendMessage"
-	fmt.Println(url)
+
 	res, err := http.Post(
 		url,
 		"application/json",
@@ -96,4 +133,10 @@ func (p *TelegramProvider) SendTextMessage(text string) error {
 	}
 
 	return nil
+}
+
+type ProviderContext struct {
+	State   *State
+	Command command.Command
+	Token   TokenProxy
 }

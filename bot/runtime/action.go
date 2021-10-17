@@ -7,11 +7,11 @@ import (
 )
 
 type Action interface {
-	Run(p ChatProvider, t TokenProxy, s *State, c command.Command) error
+	Run(p ChatProvider, t TokenProxy, s *State, c command.Command) ActionError
 }
 
 type SendTextMessage struct {
-	Text string
+	params map[string]string
 }
 
 func (a *SendTextMessage) Run(
@@ -19,23 +19,51 @@ func (a *SendTextMessage) Run(
 	t TokenProxy,
 	s *State,
 	c command.Command,
-) error {
-	tmpl, err := template.New("test").Parse(a.Text)
+) ActionError {
+	tmpl, err := template.New("test").Parse(a.params["text"])
 	if err != nil {
-		return err
+		return &GenericActionError{innerError: err}
 	}
 
 	var tpl bytes.Buffer
 
 	if err := tmpl.Execute(&tpl, t.ToPlainStruct()); err != nil {
-		return err
+		return &GenericActionError{innerError: err}
 	}
 
 	result := tpl.String()
-	err = p.SendTextMessage(result)
+	err = p.SendTextMessage(result, ProviderContext{
+		State:   s,
+		Command: c,
+		Token:   t,
+	})
 	if err != nil {
-		return err
+		return &GenericActionError{innerError: err}
 	}
 
 	return nil
+}
+
+func CreateAction(name string, params map[string]string, actionRegistry func(string, map[string]string) Action) Action {
+	if name == "send_text" {
+		return &SendTextMessage{params: params}
+	}
+
+	if actionRegistry != nil {
+		return actionRegistry(name, params)
+	}
+
+	return nil
+}
+
+type ActionError interface {
+	error
+}
+
+type GenericActionError struct {
+	innerError error
+}
+
+func (m *GenericActionError) Error() string {
+	return m.innerError.Error()
 }

@@ -36,8 +36,8 @@ func (m *Marking) Has(place string) bool {
 }
 
 type MarkingStorage struct {
-	singleState  bool
-	markingField string
+	SingleState  bool
+	MarkingField string
 }
 
 // GetMarking get marking from a subject
@@ -50,15 +50,15 @@ func (s *MarkingStorage) GetMarking(subject interface{}) (*Marking, error) {
 	}
 
 	rv = rv.Elem()
-	fv := rv.FieldByName(s.markingField)
+	fv := rv.FieldByName(s.MarkingField)
 
 	if !fv.IsValid() {
-		return nil, fmt.Errorf("not a field Name: %s", s.markingField)
+		return nil, fmt.Errorf("not a field Name: %s", s.MarkingField)
 	}
 
-	if s.singleState {
+	if s.SingleState {
 		if fv.Kind() != reflect.String {
-			return nil, fmt.Errorf("%s is not a string field", s.markingField)
+			return nil, fmt.Errorf("%s is not a string field", s.MarkingField)
 		}
 
 		return &Marking{map[string]bool{fv.String(): true}}, nil
@@ -77,19 +77,19 @@ func (s *MarkingStorage) SetMarking(subject interface{}, m *Marking) error {
 	}
 
 	rv = rv.Elem()
-	fv := rv.FieldByName(s.markingField)
+	fv := rv.FieldByName(s.MarkingField)
 
 	if !fv.IsValid() {
-		return fmt.Errorf("not a field Name: %s", s.markingField)
+		return fmt.Errorf("not a field Name: %s", s.MarkingField)
 	}
 
 	if !fv.CanSet() {
-		return fmt.Errorf("%s is not a settable field", s.markingField)
+		return fmt.Errorf("%s is not a settable field", s.MarkingField)
 	}
 
-	if s.singleState {
+	if s.SingleState {
 		if fv.Kind() != reflect.String {
-			return fmt.Errorf("%s is not a string field", s.markingField)
+			return fmt.Errorf("%s is not a string field", s.MarkingField)
 		}
 
 		for name, _ := range m.Places {

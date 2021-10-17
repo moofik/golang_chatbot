@@ -3,3 +3,31 @@ scenario:
   provider:
     name: telegram
     token: '1799138792:AAGryx8c1D48yT8TAD5VCG1yzXs8k3tPtIc'
+
+  states:
+    -
+      name: unknown
+      transitions:
+        - {name: to_start, state_to: start, command: {type: 'text_input', arguments: ['/start']}}
+
+    -
+      name: start
+      actions:
+        send_text:
+          name: send_text
+          params:
+            text: >
+              Приветик. Меня зовут Шрек Болотный. Я торговец криптой. Че нибудь напиши))
+      transitions:
+        - {name: to_end, state_to: end, command: {type: 'text_input'}}
+
+    -
+      name: end
+      actions:
+        send_text:
+          name: send_text
+          params:
+            text: 'Все, конец, пнх сарек =)'
+      transitions:
+        - {name: to_start_e, state_to: start, command: {type: 'button', arguments: ['/back', 'В начало']}}
+

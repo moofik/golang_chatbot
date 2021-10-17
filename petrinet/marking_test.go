@@ -8,8 +8,8 @@ func TestGetMarkingForMultistate(t *testing.T) {
 	}{map[string]bool{"place1": true, "place2": true}}
 
 	storage := MarkingStorage{
-		markingField: "States",
-		singleState:  false,
+		MarkingField: "States",
+		SingleState:  false,
 	}
 
 	marking, err := storage.GetMarking(&subject)
@@ -38,8 +38,8 @@ func TestGetMarkingForSinglestate(t *testing.T) {
 	}{"place"}
 
 	storage := MarkingStorage{
-		markingField: "State",
-		singleState:  true,
+		MarkingField: "State",
+		SingleState:  true,
 	}
 
 	marking, err := storage.GetMarking(&subject)
@@ -64,8 +64,8 @@ func TestSetMarkingForMultistate(t *testing.T) {
 	}{map[string]bool{}}
 
 	storage := MarkingStorage{
-		markingField: "States",
-		singleState:  false,
+		MarkingField: "States",
+		SingleState:  false,
 	}
 
 	marking := &Marking{map[string]bool{"place1": true, "place2": true}}
@@ -102,8 +102,8 @@ func TestSetMarkingForSinglestate(t *testing.T) {
 	}{}
 
 	storage := MarkingStorage{
-		markingField: "State",
-		singleState:  true,
+		MarkingField: "State",
+		SingleState:  true,
 	}
 
 	marking := &Marking{map[string]bool{"place": true}}

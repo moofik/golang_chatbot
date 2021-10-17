@@ -12,8 +12,8 @@ func (s *Subject) GetMarkingFieldName() string {
 
 func getDefaultMarkingStorage(subject Subject) *MarkingStorage {
 	return &MarkingStorage{
-		markingField: subject.GetMarkingFieldName(),
-		singleState:  false,
+		MarkingField: subject.GetMarkingFieldName(),
+		SingleState:  false,
 	}
 }
 
@@ -195,8 +195,8 @@ func TestGetMarkingEmptyInitialMarking(t *testing.T) {
 	workflow := DefaultWorkflow{
 		Definition: d,
 		MarkingStorage: &MarkingStorage{
-			singleState:  false,
-			markingField: subject.GetMarkingFieldName(),
+			SingleState:  false,
+			MarkingField: subject.GetMarkingFieldName(),
 		},
 		Name: "test",
 	}

@@ -63,18 +63,69 @@ func (t Token) ToPlainStruct() interface{} {
 
 // TokenFactory implementation
 type TokenFactory struct {
+	DB *gorm.DB
 }
 
 func (tf TokenFactory) GetOrCreate(p runtime.ChatProvider) runtime.TokenProxy {
+	repository := &TokenRepository{DB: tf.DB}
 	if p.GetConfig().Name == runtime.PROVIDER_TELEGRAM {
-		msg := runtime.GetTelegramMessage(p.GetMessageFactory().GetSerializedMessage(p.GetConfig()))
-		return &Token{
-			ChatId:    msg.Message.Chat.Id,
-			UserName:  msg.Message.Chat.UserName,
-			FirstName: msg.Message.Chat.FirstName,
-			LastName:  msg.Message.Chat.LastName,
+		msg := runtime.GetTelegramMessage(p.GetMessage())
+		token := repository.FindByChatIdAndScenario(int(msg.Message.Chat.Id), p.GetScenarioName())
+
+		if token == nil {
+			token = &Token{
+				ChatId:       msg.Message.Chat.Id,
+				UserName:     msg.Message.Chat.UserName,
+				FirstName:    msg.Message.Chat.FirstName,
+				LastName:     msg.Message.Chat.LastName,
+				ScenarioName: p.GetScenarioName(),
+				State:        "unknown",
+			}
 		}
+
+		return token
 	}
 
 	panic("Token not found")
+}
+
+type TokenRepository struct {
+	DB *gorm.DB
+}
+
+func (r TokenRepository) FindByChatIdAndScenario(chatId int, scenario string) runtime.TokenProxy {
+	var token Token
+	res := r.DB.First(&token, "chat_id = ? and scenario_name = ?", chatId, scenario)
+	if res.Error != nil {
+		return nil
+	}
+	return &token
+}
+
+func (r TokenRepository) Persist(token runtime.TokenProxy) {
+	r.DB.Save(token)
+}
+
+func (r TokenRepository) FindByScenario(scenario string) []runtime.TokenProxy {
+	var tokens []Token
+	r.DB.Where("scenario_name = ?", scenario).Find(&tokens)
+
+	models := make([]runtime.TokenProxy, len(tokens))
+	for i, v := range tokens {
+		models[i] = runtime.TokenProxy(v)
+	}
+
+	return models
+}
+
+func isNil(i runtime.TokenProxy) bool {
+	var ret bool
+	switch i.(type) {
+	case *Token:
+		v := i.(*Token)
+		ret = v == nil
+	default:
+		ret = false
+	}
+	return ret
 }
