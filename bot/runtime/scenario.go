@@ -4,8 +4,9 @@ import (
 	"bot-daedalus/bot/command"
 	"bot-daedalus/petrinet"
 	"fmt"
-	"github.com/spf13/viper"
 	"reflect"
+
+	"github.com/spf13/viper"
 )
 
 type Scenario struct {
@@ -40,14 +41,32 @@ func (s *Scenario) HandleCommand() TokenProxy {
 	cmd := s.Provider.GetCommand(currentState)
 
 	if cmd == nil {
+		fmt.Sprintf("command not found for token %d and scenario %s", token.GetChatId(), s.Provider.GetScenarioName())
 		return token
 	}
+
+	fmt.Println()
+	fmt.Println("-------------")
+	fmt.Println(cmd.Debug())
+	fmt.Println("-------------")
+	fmt.Println()
 
 	transition, err := currentState.GetTransition(cmd)
 
 	if err != nil {
 		// handle state error
-		panic(err.Error())
+		s.Provider.SendTextMessage("HANDLE STATE ERR", ProviderContext{
+			State: currentState,
+			Command: &command.UserInputCommand{
+				Text: "",
+				Metadata: &command.Metadata{
+					Cmd:   "/system",
+					Place: "noplace",
+				},
+			},
+			Token: token,
+		})
+		return token
 	}
 
 	can, err := s.Workflow.CanFire(token, transition.Name)
@@ -138,7 +157,6 @@ func (b *ScenarioBuilder) BuildScenario(path string, name string) (*Scenario, er
 }
 
 func (b *ScenarioBuilder) walk(v reflect.Value) {
-	//fmt.Printf("Visiting %v\n", v)
 	// Indirect through pointers and interfaces
 	for v.Kind() == reflect.Ptr || v.Kind() == reflect.Interface {
 		v = v.Elem()

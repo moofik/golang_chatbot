@@ -39,7 +39,7 @@ func (c *UserInputCommand) ToProtoHash() string {
 }
 
 func (c *UserInputCommand) Debug() string {
-	return fmt.Sprintf("cmd: %s, state name: %s, text: %s, hash: %s", c.Metadata.Cmd, c.Metadata.Place, c.Text, c.ToHash())
+	return fmt.Sprintf("cmd: %s, state name: %s, text: %s, hash: %s, data: %s", c.Metadata.Cmd, c.Metadata.Place, c.Text, c.ToHash(), c.GetCommand())
 }
 
 func (c *UserInputCommand) GetMetadata() *Metadata {

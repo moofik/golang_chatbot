@@ -25,6 +25,7 @@ func (b *DefaultBot) HandleRequest(mf SerializedMessageFactory) {
 		Provider:       provider,
 		states:         nil,
 	}
+
 	s, err := sbuilder.BuildScenario(b.ScenarioPath, b.ScenarioName)
 
 	if err != nil {

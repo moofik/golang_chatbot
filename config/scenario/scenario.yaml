@@ -29,5 +29,5 @@ scenario:
           params:
             text: 'Все, конец, пнх сарек =)'
       transitions:
-        - {name: to_start_e, state_to: start, command: {type: 'button', arguments: ['/back', 'В начало']}}
+        - {name: to_start_end, state_to: start, command: {type: 'button', arguments: ['/back', 'В начало']}}
 

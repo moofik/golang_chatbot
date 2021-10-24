@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 )
 
@@ -46,7 +47,7 @@ func (p *TelegramProvider) GetCommand(state *State) command.Command {
 		return nil
 	}
 
-	if m.Message.Text != "" && m.Message.Text[0] == '/' {
+	if m.Message.Text[0] == '/' {
 		var dataSlice []string = []string{m.Message.Text}
 		var interfaceSlice []interface{} = make([]interface{}, len(dataSlice))
 		for i, d := range dataSlice {
@@ -105,6 +106,8 @@ func (p *TelegramProvider) SendTextMessage(text string, ctx ProviderContext) err
 	}
 
 	if len(buttonsSlice) > 0 {
+		fmt.Println("buttons for current state:")
+		fmt.Sprintf("%v", buttonsSlice)
 		reqBody.ReplyMarkup = map[string][][]map[string]string{
 			"inline_keyboard": {buttonsSlice},
 		}
@@ -125,7 +128,7 @@ func (p *TelegramProvider) SendTextMessage(text string, ctx ProviderContext) err
 	)
 
 	if err != nil {
-		panic("ERR")
+		return err
 	}
 
 	if res.StatusCode != http.StatusOK {
