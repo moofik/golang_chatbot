@@ -25,7 +25,8 @@ func main() {
 	handler := func(c *gin.Context) {
 		//fmt.Printf(newStr)
 		//provider.GetCommandFromRequest(c)
-		fmt.Println("NEW HANDLE REQUEST")
+		fmt.Println("Request body: ")
+
 		bot := runtime.DefaultBot{
 			ScenarioPath:    "config/scenario",
 			ScenarioName:    "scenario",
@@ -33,6 +34,7 @@ func main() {
 			TokenRepository: models.TokenRepository{DB: db},
 		}
 		bot.HandleRequest(&runtime.DefaultSerializedMessageFactory{Ctx: c})
+
 	}
 
 	r := gin.Default()

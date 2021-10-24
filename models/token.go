@@ -2,6 +2,7 @@ package models
 
 import (
 	"bot-daedalus/bot/runtime"
+
 	"gorm.io/gorm"
 )
 
@@ -68,18 +69,36 @@ type TokenFactory struct {
 
 func (tf TokenFactory) GetOrCreate(p runtime.ChatProvider) runtime.TokenProxy {
 	repository := &TokenRepository{DB: tf.DB}
+	var token runtime.TokenProxy
+
 	if p.GetConfig().Name == runtime.PROVIDER_TELEGRAM {
 		msg := runtime.GetTelegramMessage(p.GetMessage())
-		token := repository.FindByChatIdAndScenario(int(msg.Message.Chat.Id), p.GetScenarioName())
 
-		if token == nil {
-			token = &Token{
-				ChatId:       msg.Message.Chat.Id,
-				UserName:     msg.Message.Chat.UserName,
-				FirstName:    msg.Message.Chat.FirstName,
-				LastName:     msg.Message.Chat.LastName,
-				ScenarioName: p.GetScenarioName(),
-				State:        "unknown",
+		if msg.Message.Chat.Id != 0 {
+			token = repository.FindByChatIdAndScenario(int(msg.Message.Chat.Id), p.GetScenarioName())
+
+			if token == nil {
+				token = &Token{
+					ChatId:       msg.Message.Chat.Id,
+					UserName:     msg.Message.Chat.UserName,
+					FirstName:    msg.Message.Chat.FirstName,
+					LastName:     msg.Message.Chat.LastName,
+					ScenarioName: p.GetScenarioName(),
+					State:        "unknown",
+				}
+			}
+		} else if msg.CallbackQuery.Chat.Id != 0 {
+			token := repository.FindByChatIdAndScenario(int(msg.CallbackQuery.Chat.Id), p.GetScenarioName())
+
+			if token == nil {
+				token = &Token{
+					ChatId:       msg.CallbackQuery.Chat.Id,
+					UserName:     msg.CallbackQuery.Chat.UserName,
+					FirstName:    msg.CallbackQuery.Chat.FirstName,
+					LastName:     msg.CallbackQuery.Chat.LastName,
+					ScenarioName: p.GetScenarioName(),
+					State:        "unknown",
+				}
 			}
 		}
 

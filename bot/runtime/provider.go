@@ -43,12 +43,23 @@ type TelegramProvider struct {
 func (p *TelegramProvider) GetCommand(state *State) command.Command {
 	m := GetTelegramMessage(p.message)
 
-	if m.Message.Text == "" {
+	if m.Message.Text == "" && m.CallbackQuery.Data == "" {
 		return nil
 	}
 
-	if m.Message.Text[0] == '/' {
-		var dataSlice []string = []string{m.Message.Text}
+	cmdFlag := false
+	cmdText := ""
+
+	if m.Message.Text != "" && m.Message.Text[0] == '/' {
+		cmdFlag = true
+		cmdText = m.Message.Text
+	} else if m.CallbackQuery.Data != "" && m.CallbackQuery.Data[0] == '/' {
+		cmdFlag = true
+		cmdText = m.CallbackQuery.Data
+	}
+
+	if cmdFlag {
+		var dataSlice []string = []string{cmdText}
 		var interfaceSlice []interface{} = make([]interface{}, len(dataSlice))
 		for i, d := range dataSlice {
 			interfaceSlice[i] = d

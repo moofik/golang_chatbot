@@ -4,6 +4,7 @@ import (
 	"bot-daedalus/config"
 	"bytes"
 	"encoding/json"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -31,6 +32,26 @@ type TelegramMessage struct {
 		Date uint   `json:"date"`
 		Text string `json:"text"`
 	} `json:"message"`
+	CallbackQuery struct {
+		QueryId uint `json:"id"`
+		From    struct {
+			Id           uint   `json:"id"`
+			IsBot        bool   `json:"is_bot"`
+			FirstName    string `json:"first_name"`
+			LastName     string `json:"last_name"`
+			UserName     string `json:"username"`
+			LanguageCode string `json:"language_code"`
+		} `json:"from"`
+		Chat struct {
+			Id        uint   `json:"id"`
+			FirstName string `json:"first_name"`
+			LastName  string `json:"last_name"`
+			UserName  string `json:"username"`
+			Type      string `json:"type"`
+		} `json:"chat"`
+		Date uint   `json:"date"`
+		Data string `json:"data"`
+	} `json:"callback_query"`
 }
 
 type SerializedMessageFactory interface {
