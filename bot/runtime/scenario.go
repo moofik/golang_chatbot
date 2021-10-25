@@ -44,13 +44,13 @@ func (s *Scenario) HandleCommand() TokenProxy {
 		fmt.Sprintf("command not found for token %d and scenario %s", token.GetChatId(), s.Provider.GetScenarioName())
 		return token
 	}
-
-	fmt.Println()
-	fmt.Println("-------------")
-	fmt.Println(cmd.Debug())
-	fmt.Println("-------------")
-	fmt.Println()
-
+	/*
+		fmt.Println()
+		fmt.Println("-------------")
+		fmt.Println(cmd.Debug())
+		fmt.Println("-------------")
+		fmt.Println()
+	*/
 	transition, err := currentState.GetTransition(cmd)
 
 	if err != nil {
@@ -85,9 +85,12 @@ func (s *Scenario) HandleCommand() TokenProxy {
 		}
 	}
 
-	if err != nil || !can {
+	if err != nil {
 		panic(err.Error())
-		// handle state error
+	}
+
+	if !can {
+		fmt.Println("Can not move further! Prohibited transition.")
 	}
 
 	return token
@@ -131,14 +134,13 @@ func (b *ScenarioBuilder) BuildScenario(path string, name string) (*Scenario, er
 	}
 
 	for _, state := range b.states {
-		transition, hasNext := state.TransitionStorage.Next()
-		err := definition.AddTransition(transition)
-		if err != nil {
-			return nil, err
-		}
-
-		if !hasNext {
-			break
+		for i := 0; i < state.TransitionStorage.Count(); i++ {
+			transition, _ := state.TransitionStorage.Next()
+			fmt.Println("add transition " + transition.Name)
+			err := definition.AddTransition(transition)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -273,7 +275,6 @@ func (b *ScenarioBuilder) walkTransitions(v reflect.Value) *TransitionStorage {
 		for _, kk := range tr.MapKeys() {
 			if kk.Elem().String() == "command" {
 				cmdMap := tr.MapIndex(kk).Elem()
-
 				cmdType := ""
 				var arguments []interface{} = nil
 

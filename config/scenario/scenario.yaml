@@ -17,17 +17,31 @@ scenario:
           name: send_text
           params:
             text: >
-              Приветик. Меня зовут Шрек Болотный. Я торговец криптой. Че нибудь напиши))
+              Привет! Я помогу тебе продать или купить криптовалюту. А еще у нас скоро появится свой кошелёк, где ты сможешь безопасно хранить свои средства :)
+              Давай зарегестрируем тебе аккаунт в системе, напиши как тебя зовут.
       transitions:
-        - {name: to_end, state_to: end, command: {type: 'text_input'}}
+        - {name: to_nice_to_meet_you, state_to: nice_to_meet_you, command: {type: 'text_input'}}
 
     -
-      name: end
+      name: nice_to_meet_you
+      actions:
+        remember_name:
+          name: remember_input
+          params: { pattern: '{{.user_name}}' }
+        send_text:
+          name: send_text
+          params:
+            text: 'Спасибо, {{.user_name}}. Твой аккаунт зарегистрирован. Теперь ты можешь пользоваться нашей системой обмена криптовалют.'
+      transitions:
+        - {name: to_main_menu, state_to: main_menu, command: {type: 'button', arguments: ['/back', 'Перейти в меню']}}
+
+    -
+      name: main_menu
       actions:
         send_text:
           name: send_text
           params:
-            text: 'Все, конец, пнх сарек =)'
+            text: 'Здесь ты можешь выбрать нужное тебе действие.'
       transitions:
-        - {name: to_start_end, state_to: start, command: {type: 'button', arguments: ['/back', 'В начало']}}
-
+        - {name: buy, state_to: nice_to_meet_you, command: {type: 'button', arguments: ['/buy', 'Купить :joy:']}}
+        - {name: sell, state_to: nice_to_meet_you, command: {type: 'button', arguments: ['/sell', 'Продать :cry:']}}

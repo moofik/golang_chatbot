@@ -67,17 +67,15 @@ func (ts *TransitionStorage) Next() (*petrinet.Transition, bool) {
 	sort.Strings(keys)
 
 	has := false
-
 	if ts.index < len(keys) {
 		has = true
 	}
 
 	if has {
 		if t, ok := ts.transitionMap[keys[ts.index]]; ok {
+			ts.index++
 			return t.Transition, true
 		}
-
-		ts.index++
 	}
 
 	return nil, false

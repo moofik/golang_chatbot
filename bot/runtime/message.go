@@ -11,47 +11,39 @@ import (
 type Message interface{}
 
 type TelegramMessage struct {
-	UpdateId uint `json:"update_id"`
+	UpdateId uint `json:"update_id,omitempty"`
 	Message  struct {
-		MessageId uint `json:"message_id"`
+		MessageId uint `json:"message_id,omitempty"`
 		From      struct {
-			Id           uint   `json:"id"`
-			IsBot        bool   `json:"is_bot"`
-			FirstName    string `json:"first_name"`
-			LastName     string `json:"last_name"`
-			UserName     string `json:"username"`
-			LanguageCode string `json:"language_code"`
-		} `json:"from"`
+			Id           uint   `json:"id,omitempty"`
+			IsBot        bool   `json:"is_bot,omitempty"`
+			FirstName    string `json:"first_name,omitempty"`
+			LastName     string `json:"last_name,omitempty"`
+			UserName     string `json:"username,omitempty"`
+			LanguageCode string `json:"language_code,omitempty"`
+		} `json:"from,omitempty"`
 		Chat struct {
-			Id        uint   `json:"id"`
-			FirstName string `json:"first_name"`
-			LastName  string `json:"last_name"`
-			UserName  string `json:"username"`
-			Type      string `json:"type"`
-		} `json:"chat"`
-		Date uint   `json:"date"`
-		Text string `json:"text"`
-	} `json:"message"`
+			Id        uint   `json:"id,omitempty"`
+			FirstName string `json:"first_name,omitempty"`
+			LastName  string `json:"last_name,omitempty"`
+			UserName  string `json:"username,omitempty"`
+			Type      string `json:"type,omitempty"`
+		} `json:"chat,omitempty"`
+		Date uint   `json:"date,omitempty"`
+		Text string `json:"text,omitempty"`
+	} `json:"message,omitempty"`
 	CallbackQuery struct {
-		QueryId uint `json:"id"`
+		QueryId string `json:"id,omitempty"`
 		From    struct {
-			Id           uint   `json:"id"`
-			IsBot        bool   `json:"is_bot"`
-			FirstName    string `json:"first_name"`
-			LastName     string `json:"last_name"`
-			UserName     string `json:"username"`
-			LanguageCode string `json:"language_code"`
-		} `json:"from"`
-		Chat struct {
-			Id        uint   `json:"id"`
-			FirstName string `json:"first_name"`
-			LastName  string `json:"last_name"`
-			UserName  string `json:"username"`
-			Type      string `json:"type"`
-		} `json:"chat"`
-		Date uint   `json:"date"`
-		Data string `json:"data"`
-	} `json:"callback_query"`
+			Id           uint   `json:"id,omitempty"`
+			IsBot        bool   `json:"is_bot,omitempty"`
+			FirstName    string `json:"first_name,omitempty"`
+			LastName     string `json:"last_name,omitempty"`
+			UserName     string `json:"username,omitempty"`
+			LanguageCode string `json:"language_code,omitempty"`
+		} `json:"from,omitempty"`
+		Data string `json:"data,omitempty"`
+	} `json:"callback_query,omitempty"`
 }
 
 type SerializedMessageFactory interface {

@@ -3,8 +3,6 @@ package main
 import (
 	"bot-daedalus/bot/runtime"
 	"bot-daedalus/models"
-	"fmt"
-
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -25,7 +23,6 @@ func main() {
 	handler := func(c *gin.Context) {
 		//fmt.Printf(newStr)
 		//provider.GetCommandFromRequest(c)
-		fmt.Println("Request body: ")
 
 		bot := runtime.DefaultBot{
 			ScenarioPath:    "config/scenario",
@@ -33,6 +30,10 @@ func main() {
 			TokenFactory:    models.TokenFactory{DB: db},
 			TokenRepository: models.TokenRepository{DB: db},
 		}
+
+		//fmt.Println("REQUEST BODY:")
+		//bot.LogRequest(c)
+
 		bot.HandleRequest(&runtime.DefaultSerializedMessageFactory{Ctx: c})
 
 	}

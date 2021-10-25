@@ -2,7 +2,7 @@ package models
 
 import (
 	"bot-daedalus/bot/runtime"
-
+	"encoding/json"
 	"gorm.io/gorm"
 )
 
@@ -16,6 +16,28 @@ type Token struct {
 	UserName     string
 	FirstName    string
 	LastName     string
+	Extras       string
+}
+
+func (t Token) GetExtras() map[string]string {
+	var objmap map[string]string
+	err := json.Unmarshal([]byte(t.Extras), &objmap)
+
+	if err != nil {
+		panic(err)
+	}
+
+	return objmap
+}
+
+func (t Token) SetExtras(extras map[string]string) {
+	result, err := json.Marshal(extras)
+
+	if err != nil {
+		panic(err)
+	}
+
+	t.Extras = string(result)
 }
 
 func (t Token) GetChatId() uint {
@@ -87,15 +109,15 @@ func (tf TokenFactory) GetOrCreate(p runtime.ChatProvider) runtime.TokenProxy {
 					State:        "unknown",
 				}
 			}
-		} else if msg.CallbackQuery.Chat.Id != 0 {
-			token := repository.FindByChatIdAndScenario(int(msg.CallbackQuery.Chat.Id), p.GetScenarioName())
+		} else if msg.CallbackQuery.QueryId != "" {
+			token = repository.FindByChatIdAndScenario(int(msg.CallbackQuery.From.Id), p.GetScenarioName())
 
 			if token == nil {
 				token = &Token{
-					ChatId:       msg.CallbackQuery.Chat.Id,
-					UserName:     msg.CallbackQuery.Chat.UserName,
-					FirstName:    msg.CallbackQuery.Chat.FirstName,
-					LastName:     msg.CallbackQuery.Chat.LastName,
+					ChatId:       msg.CallbackQuery.From.Id,
+					UserName:     msg.CallbackQuery.From.UserName,
+					FirstName:    msg.CallbackQuery.From.FirstName,
+					LastName:     msg.CallbackQuery.From.LastName,
 					ScenarioName: p.GetScenarioName(),
 					State:        "unknown",
 				}
@@ -135,16 +157,4 @@ func (r TokenRepository) FindByScenario(scenario string) []runtime.TokenProxy {
 	}
 
 	return models
-}
-
-func isNil(i runtime.TokenProxy) bool {
-	var ret bool
-	switch i.(type) {
-	case *Token:
-		v := i.(*Token)
-		ret = v == nil
-	default:
-		ret = false
-	}
-	return ret
 }

@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 )
 
@@ -102,6 +101,7 @@ func (p *TelegramProvider) GetMessage() Message {
 
 func (p *TelegramProvider) SendTextMessage(text string, ctx ProviderContext) error {
 	buttons := ctx.State.TransitionStorage.AllButtonCommands()
+
 	var buttonsSlice []map[string]string
 	for _, button := range buttons {
 		buttonsSlice = append(buttonsSlice, map[string]string{
@@ -117,8 +117,6 @@ func (p *TelegramProvider) SendTextMessage(text string, ctx ProviderContext) err
 	}
 
 	if len(buttonsSlice) > 0 {
-		fmt.Println("buttons for current state:")
-		fmt.Sprintf("%v", buttonsSlice)
 		reqBody.ReplyMarkup = map[string][][]map[string]string{
 			"inline_keyboard": {buttonsSlice},
 		}

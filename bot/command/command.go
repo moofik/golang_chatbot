@@ -7,8 +7,9 @@ import (
 )
 
 type Metadata struct {
-	Cmd   string
-	Place string
+	Cmd        string
+	Place      string
+	Uniqueness string
 }
 
 type Command interface {
@@ -113,7 +114,7 @@ func CreateCommand(cmd string, place string, arguments []interface{}) Command {
 		return &ButtonPressedCommand{
 			ButtonCommand: buttonCommand,
 			ButtonText:    buttonText,
-			Metadata:      &Metadata{Cmd: cmd, Place: place},
+			Metadata:      &Metadata{Cmd: cmd, Place: place, Uniqueness: buttonCommand},
 		}
 	}
 
@@ -124,7 +125,7 @@ func ToHash(metadata *Metadata) string {
 	if metadata == nil {
 		panic("METADATA = NIL")
 	}
-	hash := md5.Sum([]byte(metadata.Cmd + metadata.Place))
+	hash := md5.Sum([]byte(metadata.Cmd + metadata.Place + metadata.Uniqueness))
 	return hex.EncodeToString(hash[:])
 }
 

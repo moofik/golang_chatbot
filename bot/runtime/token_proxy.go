@@ -9,6 +9,8 @@ type TokenProxy interface {
 	GetUserName() string
 	GetFirstName() string
 	GetLastName() string
+	GetExtras() map[string]string
+	SetExtras(extras map[string]string)
 	ToPlainStruct() interface{}
 }
 
