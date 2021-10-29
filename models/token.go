@@ -19,7 +19,7 @@ type Token struct {
 	Extras       string
 }
 
-func (t Token) GetExtras() map[string]string {
+func (t *Token) GetExtras() map[string]string {
 	var objmap map[string]string
 	err := json.Unmarshal([]byte(t.Extras), &objmap)
 
@@ -30,7 +30,7 @@ func (t Token) GetExtras() map[string]string {
 	return objmap
 }
 
-func (t Token) SetExtras(extras map[string]string) {
+func (t *Token) SetExtras(extras map[string]string) {
 	result, err := json.Marshal(extras)
 
 	if err != nil {
@@ -40,48 +40,44 @@ func (t Token) SetExtras(extras map[string]string) {
 	t.Extras = string(result)
 }
 
-func (t Token) GetChatId() uint {
+func (t *Token) GetId() uint {
+	return t.ID
+}
+
+func (t *Token) GetChatId() uint {
 	return t.ChatId
 }
 
-func (t Token) GetState() string {
+func (t *Token) GetState() string {
 	return t.State
 }
-func (t Token) GetScenarioName() string {
+
+func (t *Token) GetScenarioName() string {
 	return t.ScenarioName
 }
 
-func (t Token) GetIsBlocked() bool {
+func (t *Token) GetIsBlocked() bool {
 	return t.IsBlocked
 }
 
-func (t Token) GetTimeOffset() int {
+func (t *Token) GetTimeOffset() int {
 	return t.TimeOffset
 }
 
-func (t Token) GetUserName() string {
+func (t *Token) GetUserName() string {
 	return t.UserName
 }
 
-func (t Token) GetFirstName() string {
+func (t *Token) GetFirstName() string {
 	return t.FirstName
 }
 
-func (t Token) GetLastName() string {
+func (t *Token) GetLastName() string {
 	return t.LastName
 }
 
-func (t Token) ToPlainStruct() interface{} {
-	return &Token{
-		ChatId:       t.GetChatId(),
-		State:        t.GetState(),
-		ScenarioName: t.GetScenarioName(),
-		IsBlocked:    t.GetIsBlocked(),
-		TimeOffset:   t.GetTimeOffset(),
-		UserName:     t.GetUserName(),
-		FirstName:    t.GetFirstName(),
-		LastName:     t.GetLastName(),
-	}
+func (t *Token) ToPlainStruct() interface{} {
+	return t
 }
 
 // TokenFactory implementation
@@ -107,6 +103,7 @@ func (tf TokenFactory) GetOrCreate(p runtime.ChatProvider) runtime.TokenProxy {
 					LastName:     msg.Message.Chat.LastName,
 					ScenarioName: p.GetScenarioName(),
 					State:        "unknown",
+					Extras:       "{}",
 				}
 			}
 		} else if msg.CallbackQuery.QueryId != "" {
@@ -120,6 +117,7 @@ func (tf TokenFactory) GetOrCreate(p runtime.ChatProvider) runtime.TokenProxy {
 					LastName:     msg.CallbackQuery.From.LastName,
 					ScenarioName: p.GetScenarioName(),
 					State:        "unknown",
+					Extras:       "{}",
 				}
 			}
 		}
@@ -134,7 +132,7 @@ type TokenRepository struct {
 	DB *gorm.DB
 }
 
-func (r TokenRepository) FindByChatIdAndScenario(chatId int, scenario string) runtime.TokenProxy {
+func (r *TokenRepository) FindByChatIdAndScenario(chatId int, scenario string) runtime.TokenProxy {
 	var token Token
 	res := r.DB.First(&token, "chat_id = ? and scenario_name = ?", chatId, scenario)
 	if res.Error != nil {
@@ -143,12 +141,12 @@ func (r TokenRepository) FindByChatIdAndScenario(chatId int, scenario string) ru
 	return &token
 }
 
-func (r TokenRepository) Persist(token runtime.TokenProxy) {
+func (r *TokenRepository) Persist(token runtime.TokenProxy) {
 	r.DB.Save(token)
 }
 
-func (r TokenRepository) FindByScenario(scenario string) []runtime.TokenProxy {
-	var tokens []Token
+func (r *TokenRepository) FindByScenario(scenario string) []runtime.TokenProxy {
+	var tokens []*Token
 	r.DB.Where("scenario_name = ?", scenario).Find(&tokens)
 
 	models := make([]runtime.TokenProxy, len(tokens))

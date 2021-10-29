@@ -7,17 +7,23 @@ import (
 )
 
 type Action interface {
-	Run(p ChatProvider, t TokenProxy, s *State, c command.Command) ActionError
+	Run(p ChatProvider, t TokenProxy, s *State, prev *State, c command.Command) ActionError
+	GetName() string
 }
 
 type SendTextMessage struct {
 	params map[string]string
 }
 
+func (a *SendTextMessage) GetName() string {
+	return "send_text"
+}
+
 func (a *SendTextMessage) Run(
 	p ChatProvider,
 	t TokenProxy,
 	s *State,
+	prev *State,
 	c command.Command,
 ) ActionError {
 	tmpl, err := template.New("test").Parse(a.params["text"])
@@ -27,9 +33,7 @@ func (a *SendTextMessage) Run(
 
 	var tpl bytes.Buffer
 
-	data := map[string]string{
-		"user_name": "SHAREK",
-	}
+	data := t.GetExtras()
 
 	if err := tmpl.Execute(&tpl, data); err != nil {
 		return &GenericActionError{innerError: err}
@@ -52,12 +56,52 @@ type RememberInput struct {
 	params map[string]string
 }
 
+func (a *RememberInput) GetName() string {
+	return "remember_input"
+}
+
 func (a *RememberInput) Run(
 	p ChatProvider,
 	t TokenProxy,
 	s *State,
+	prev *State,
 	c command.Command,
 ) ActionError {
+	extras := t.GetExtras()
+	extras[a.params["var"]] = c.GetInput()
+	t.SetExtras(extras)
+	return nil
+}
+
+type RememberCaption struct {
+	params map[string]string
+}
+
+func (a *RememberCaption) GetName() string {
+	return "remember_input"
+}
+
+func (a *RememberCaption) Run(
+	p ChatProvider,
+	t TokenProxy,
+	s *State,
+	prev *State,
+	c command.Command,
+) ActionError {
+	newCmd := &command.ButtonPressedCommand{
+		ButtonCommand: c.GetInput(),
+		ButtonText:    c.GetCaption(),
+		Metadata: &command.Metadata{
+			Cmd:        "button",
+			Place:      s.Name,
+			Uniqueness: c.GetInput(),
+		}}
+
+	cmd, _ := prev.GetCommandByUniqueness(newCmd)
+
+	extras := t.GetExtras()
+	extras[a.params["var"]] = cmd.GetCaption()
+	t.SetExtras(extras)
 	return nil
 }
 
@@ -67,7 +111,11 @@ func CreateAction(name string, params map[string]string, actionRegistry func(str
 	}
 
 	if name == "remember_input" {
-		return &RememberInput{}
+		return &RememberInput{params: params}
+	}
+
+	if name == "remember_caption" {
+		return &RememberCaption{params: params}
 	}
 
 	if actionRegistry != nil {

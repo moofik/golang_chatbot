@@ -1,6 +1,7 @@
 package runtime
 
 type TokenProxy interface {
+	GetId() uint
 	GetChatId() uint
 	GetState() string
 	GetScenarioName() string

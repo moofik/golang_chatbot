@@ -21,10 +21,11 @@ type ChatProvider interface {
 	GetToken() TokenProxy
 	GetConfig() config.ProviderConfig
 	GetScenarioName() string
+	GetTokenRepository() TokenRepository
 	SendTextMessage(text string, ctx ProviderContext) error
 }
 
-type telegramOutgoingMessage struct {
+type TelegramOutgoingMessage struct {
 	ChatID      uint                             `json:"chat_id"`
 	Text        string                           `json:"text"`
 	ParseMode   string                           `json:"parse_mode"`
@@ -37,6 +38,11 @@ type TelegramProvider struct {
 	messageFactory SerializedMessageFactory
 	config         config.ProviderConfig
 	message        Message
+	TokenRepository
+}
+
+func (p *TelegramProvider) GetTokenRepository() TokenRepository {
+	return p.TokenRepository
 }
 
 func (p *TelegramProvider) GetCommand(state *State) command.Command {
@@ -106,11 +112,11 @@ func (p *TelegramProvider) SendTextMessage(text string, ctx ProviderContext) err
 	for _, button := range buttons {
 		buttonsSlice = append(buttonsSlice, map[string]string{
 			"text":          button.GetCaption(),
-			"callback_data": button.GetCommand(),
+			"callback_data": button.GetInput(),
 		})
 	}
 
-	reqBody := &telegramOutgoingMessage{
+	reqBody := &TelegramOutgoingMessage{
 		ChatID:    p.GetToken().GetChatId(),
 		Text:      text,
 		ParseMode: "HTML",

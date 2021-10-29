@@ -33,13 +33,9 @@ func (s *Scenario) GetCurrentState(token TokenProxy) *State {
 	return nil
 }
 
-func (s *Scenario) HandleCommand() TokenProxy {
+func (s *Scenario) HandleCommand(cmd command.Command, currentState *State, token TokenProxy) TokenProxy {
 	// get state by token
 	// run state actions
-	token := s.Provider.GetToken()
-	currentState := s.GetCurrentState(token)
-	cmd := s.Provider.GetCommand(currentState)
-
 	if cmd == nil {
 		fmt.Sprintf("command not found for token %d and scenario %s", token.GetChatId(), s.Provider.GetScenarioName())
 		return token
@@ -55,7 +51,7 @@ func (s *Scenario) HandleCommand() TokenProxy {
 
 	if err != nil {
 		// handle state error
-		s.Provider.SendTextMessage("HANDLE STATE ERR", ProviderContext{
+		s.Provider.SendTextMessage(err.Error(), ProviderContext{
 			State: currentState,
 			Command: &command.UserInputCommand{
 				Text: "",
@@ -70,10 +66,11 @@ func (s *Scenario) HandleCommand() TokenProxy {
 	}
 
 	can, err := s.Workflow.CanFire(token, transition.Name)
+	var newState *State
 
 	if can {
-		newState := s.States[transition.To[0]]
-		err := newState.Execute(token, s.Provider, cmd)
+		newState = s.States[transition.To[0]]
+		err := newState.Execute(token, s.Provider, cmd, currentState)
 		if err != nil {
 			panic(err.Error())
 			//handle action error
@@ -91,6 +88,18 @@ func (s *Scenario) HandleCommand() TokenProxy {
 
 	if !can {
 		fmt.Println("Can not move further! Prohibited transition.")
+	}
+
+	if newState != nil {
+		newCmd, _ := newState.GetCommandByProto(&command.InstantTransitionCommand{Metadata: &command.Metadata{
+			Cmd:        "instant",
+			Place:      "",
+			Uniqueness: "",
+		}})
+
+		if newCmd != nil {
+			token = s.HandleCommand(newCmd, newState, token)
+		}
 	}
 
 	return token
@@ -136,7 +145,6 @@ func (b *ScenarioBuilder) BuildScenario(path string, name string) (*Scenario, er
 	for _, state := range b.states {
 		for i := 0; i < state.TransitionStorage.Count(); i++ {
 			transition, _ := state.TransitionStorage.Next()
-			fmt.Println("add transition " + transition.Name)
 			err := definition.AddTransition(transition)
 			if err != nil {
 				return nil, err
@@ -289,7 +297,8 @@ func (b *ScenarioBuilder) walkTransitions(v reflect.Value) *TransitionStorage {
 				}
 
 				if cmdType != "" {
-					commands = append(commands, command.CreateCommand(cmdType, b.currentPlaceName, arguments))
+					newCmd := command.CreateCommand(cmdType, b.currentPlaceName, arguments)
+					commands = append(commands, newCmd)
 				}
 			}
 		}

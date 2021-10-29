@@ -27,7 +27,7 @@ scenario:
       actions:
         remember_name:
           name: remember_input
-          params: { pattern: '{{.user_name}}' }
+          params: { var: 'user_name' }
         send_text:
           name: send_text
           params:
@@ -38,10 +38,203 @@ scenario:
     -
       name: main_menu
       actions:
+        cancel_order_data:
+          name: cancel_order_data
         send_text:
           name: send_text
           params:
-            text: 'Здесь ты можешь выбрать нужное тебе действие.'
+            text: >
+              Ты находишься в главном меню системы.
+              Маркет - позволит тебе продавать и покупать валюту, используя любые сторонние кошельки для криптовалют.
+              Кошелек - твой кошелек на нашей платформе, с его помощью ты можешь с лёгкостью покупать, переводить, продавать, а так же хранить средства 😉
+              В обоих случаях мы выступаем гарантом сделок.
       transitions:
-        - {name: buy, state_to: nice_to_meet_you, command: {type: 'button', arguments: ['/buy', 'Купить :joy:']}}
-        - {name: sell, state_to: nice_to_meet_you, command: {type: 'button', arguments: ['/sell', 'Продать :cry:']}}
+        - {name: buy, state_to: market, command: {type: 'button', arguments: ['/market', 'Маркет']}}
+        - {name: sell, state_to: main_menu, command: {type: 'button', arguments: ['/wallet', 'Кошелек']}}
+
+    -
+      name: market
+      actions:
+        send_text:
+          name: send_text
+          params:
+            text: >
+              Маркет позволит тебе продавать и покупать валюту, используя любые сторонние кошельки для криптовалют. Выбери нужное действие.
+      transitions:
+        - {name: to_market_buy, state_to: market_buy, command: {type: 'button', arguments: ['/market_buy', 'Купить']}}
+        - {name: to_market_sell, state_to: market_sell, command: {type: 'button', arguments: ['/market_sell', 'Продать']}}
+
+    -
+      name: market_buy
+      actions:
+        remember_type:
+          name: remember_caption
+          params: { var: 'market_order_type' }
+        send_text:
+          name: send_text
+          params:
+            text: >
+              Теперь выбери крипитовалюту, которую хочешь купить.
+      transitions:
+        - {name: to_market_buy_2, state_to: market_buy_2, command: {type: 'button', arguments: ['/market_buy_btc', 'BTC']}}
+        - {name: to_market_buy_2_2, state_to: market_buy_2, command: {type: 'button', arguments: ['/market_buy_eth', 'ETH']}}
+        - {name: to_market_buy_2_3, state_to: market_buy_2, command: {type: 'button', arguments: ['/market_buy_usdt', 'USDT']}}
+        - {name: to_main_menu_mbc_1, state_to: main_menu, command: {type: 'button', arguments: ['/market_buy_cancel', 'Отмена ❌']}}
+
+    -
+      name: market_buy_2
+      actions:
+        remember_type:
+          name: remember_caption
+          params: { var: 'market_order_currency' }
+        send_text:
+          name: send_text
+          params:
+            text: >
+              Введи сумму в {{.market_order_currency}}, которую требуется приобрести
+      transitions:
+        - { name: to_market_buy_3, state_to: market_buy_3, command: { type: 'text_input' } }
+
+    -
+      name: market_buy_3
+      actions:
+        remember_name:
+          name: remember_input
+          params: { var: 'market_order_buy_amount' }
+        send_text:
+          name: send_text
+          params:
+            text: >
+              Введи адрес своего {{.market_order_currency}} кошелька, куда будут отправлены средства после покупки.
+      transitions:
+        - { name: to_market_buy_co, state_to: market_buy_co, command: { type: 'text_input' } }
+
+    -
+      name: market_buy_co
+      actions:
+        remember_name:
+          name: remember_input
+          params: { var: 'market_order_buy_address' }
+      transitions:
+        - {name: to_market_buy_co2, state_to: market_buy_co2, command: {type: 'instant'}}
+
+    -
+      name: market_buy_co2
+      actions:
+        calculate_market_buy_order:
+          name: calculate_market_buy_order
+      transitions:
+        - {name: to_market_buy_4, state_to: market_buy_4, command: {type: 'instant'}}
+
+    -
+      name: market_buy_4
+      actions:
+        send_text:
+          name: send_text
+          params:
+            text: >
+              Остался последний шаг. Отправь {{.market_order_payment_sum}} руб. на карту {{.market_order_service_card}}. После завершения, нажми "Отправлено"
+      transitions:
+        - {name: to_market_buy_5, state_to: market_buy_5, command: {type: 'button', arguments: ['/market_buy_5', 'Отправлено']}}
+        - {name: to_main_menu_mbc_2, state_to: main_menu, command: {type: 'button', arguments: ['/market_buy_cancel_2', 'Отмена ❌']}}
+
+    -
+      name: market_buy_5
+      actions:
+        confirm_market_order:
+          name: confirm_market_order
+        send_text:
+          name: send_text
+          params:
+            text: >
+              Твой заказ принят в обработку. Средства будут переведены в течении суток. Номер твоего заказа: {{.market_last_order_key}}
+      transitions:
+        - {name: to_main_menu_market_buy, state_to: main_menu, command: {type: 'button', arguments: ['/to_main_menu_from_mb5', 'В главное меню']}}
+
+    -
+      name: market_sell
+      actions:
+        remember_type:
+          name: remember_caption
+          params: { var: 'market_order_type' }
+        send_text:
+          name: send_text
+          params:
+            text: >
+              Теперь выбери крипитовалюту, которую хочешь продать.
+      transitions:
+        - {name: to_market_sell_2, state_to: market_sell_2, command: {type: 'button', arguments: ['/market_sell_btc', 'BTC']}}
+        - {name: to_market_sell_2_2, state_to: market_sell_2, command: {type: 'button', arguments: ['/market_sell_eth', 'ETH']}}
+        - {name: to_market_sell_2_3, state_to: market_sell_2, command: {type: 'button', arguments: ['/market_sell_usdt', 'USDT']}}
+        - {name: to_main_menu_msc_1, state_to: main_menu, command: {type: 'button', arguments: ['/market_buy_cancel_3', 'Отмена ❌']}}
+
+    -
+      name: market_sell_2
+      actions:
+        remember_type:
+          name: remember_caption
+          params: { var: 'market_order_currency' }
+        send_text:
+          name: send_text
+          params:
+            text: >
+              Введи сумму в {{.market_order_currency}}, которую хочешь продать
+      transitions:
+        - { name: to_market_sell_3, state_to: market_sell_3, command: { type: 'text_input' } }
+
+    -
+      name: market_sell_3
+      actions:
+        remember_name:
+          name: remember_input
+          params: { var: 'market_order_sell_amount' }
+        send_text:
+          name: send_text
+          params:
+            text: >
+              Введи номер своей карты, на нее будут отправлены средства после продажи.
+      transitions:
+        - { name: to_market_sell_co, state_to: market_sell_co, command: { type: 'text_input' } }
+
+    -
+      name: market_sell_co
+      actions:
+        remember_name:
+          name: remember_input
+          params: { var: 'market_order_sell_card' }
+      transitions:
+        - {name: to_market_sell_co2, state_to: market_sell_co2, command: {type: 'instant'}}
+
+    -
+      name: market_sell_co2
+      actions:
+        calculate_market_sell_order:
+          name: calculate_market_sell_order
+      transitions:
+        - {name: to_market_sell_4, state_to: market_sell_4, command: {type: 'instant'}}
+
+    -
+      name: market_sell_4
+      actions:
+        send_text:
+          name: send_text
+          params:
+            text: >
+              Цена продажи: {{.market_order_payment_sum}}
+              Теперь отправь {{.market_order_sell_amount}} {{.market_order_currency}} на адрес {{.market_order_service_address}}. После завершения, нажми "Отправлено"
+      transitions:
+        - {name: to_market_sell_5, state_to: market_sell_5, command: {type: 'button', arguments: ['/market_sell_5', 'Отправлено']}}
+        - {name: to_main_menu_msc_2, state_to: main_menu, command: {type: 'button', arguments: ['/market_buy_cancel_4', 'Отмена ❌']}}
+
+    -
+      name: market_sell_5
+      actions:
+        confirm_market_order:
+          name: confirm_market_order
+        send_text:
+          name: send_text
+          params:
+            text: >
+              Твой заказ принят в обработку. Средства будут переведены в течении суток. Номер твоего заказа: {{.market_last_order_key}}
+      transitions:
+        - {name: to_main_menu_market_buy, state_to: main_menu, command: {type: 'button', arguments: ['/to_main_menu_from_ms5', 'В главное меню']}}

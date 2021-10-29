@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-func GetProvider(config config.ProviderConfig, scenarioName string, tf TokenFactory, mf SerializedMessageFactory) (ChatProvider, error) {
+func GetProvider(config config.ProviderConfig, scenarioName string, tf TokenFactory, mf SerializedMessageFactory, tr TokenRepository) (ChatProvider, error) {
 	if config.Name == "telegram" {
 		return &TelegramProvider{
 			tf,
@@ -13,6 +13,7 @@ func GetProvider(config config.ProviderConfig, scenarioName string, tf TokenFact
 			mf,
 			config,
 			mf.GetSerializedMessage(config),
+			tr,
 		}, nil
 	}
 

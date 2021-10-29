@@ -15,9 +15,10 @@ type Metadata struct {
 type Command interface {
 	ToHash() string
 	ToProtoHash() string
+	ToUniquenessHash() string
 	Debug() string
 	GetMetadata() *Metadata
-	GetCommand() string
+	GetInput() string
 	GetCaption() string
 }
 
@@ -26,9 +27,47 @@ type ForceCommand interface {
 	GetExecutionDate() string
 }
 
+//
+type InstantTransitionCommand struct {
+	Metadata *Metadata
+}
+
+func (c *InstantTransitionCommand) ToHash() string {
+	return ToHash(c.Metadata)
+}
+
+func (c *InstantTransitionCommand) ToProtoHash() string {
+	return ToProtoHash(c.Metadata)
+}
+
+func (c *InstantTransitionCommand) Debug() string {
+	return fmt.Sprintf("cmd: %s, state name: %s, hash: %s", c.Metadata.Cmd, c.Metadata.Place, c.ToHash())
+}
+
+func (c *InstantTransitionCommand) GetMetadata() *Metadata {
+	return c.Metadata
+}
+
+func (c *InstantTransitionCommand) GetInput() string {
+	return ""
+}
+
+func (c *InstantTransitionCommand) GetCaption() string {
+	return "Моментальный переход"
+}
+
+func (c *InstantTransitionCommand) ToUniquenessHash() string {
+	return ToUniquenessHash(c.Metadata)
+}
+
+//
 type UserInputCommand struct {
 	Text     string
 	Metadata *Metadata
+}
+
+func (c *UserInputCommand) ToUniquenessHash() string {
+	return ToUniquenessHash(c.Metadata)
 }
 
 func (c *UserInputCommand) ToHash() string {
@@ -40,14 +79,14 @@ func (c *UserInputCommand) ToProtoHash() string {
 }
 
 func (c *UserInputCommand) Debug() string {
-	return fmt.Sprintf("cmd: %s, state name: %s, text: %s, hash: %s, data: %s", c.Metadata.Cmd, c.Metadata.Place, c.Text, c.ToHash(), c.GetCommand())
+	return fmt.Sprintf("cmd: %s, state name: %s, text: %s, hash: %s, data: %s", c.Metadata.Cmd, c.Metadata.Place, c.Text, c.ToHash(), c.GetInput())
 }
 
 func (c *UserInputCommand) GetMetadata() *Metadata {
 	return c.Metadata
 }
 
-func (c *UserInputCommand) GetCommand() string {
+func (c *UserInputCommand) GetInput() string {
 	return c.Text
 }
 
@@ -55,10 +94,15 @@ func (c *UserInputCommand) GetCaption() string {
 	return "user_text_command"
 }
 
+//
 type ButtonPressedCommand struct {
 	ButtonCommand string
 	ButtonText    string
 	Metadata      *Metadata
+}
+
+func (c *ButtonPressedCommand) ToUniquenessHash() string {
+	return ToUniquenessHash(c.Metadata)
 }
 
 func (c *ButtonPressedCommand) ToHash() string {
@@ -77,7 +121,7 @@ func (c *ButtonPressedCommand) GetMetadata() *Metadata {
 	return c.Metadata
 }
 
-func (c *ButtonPressedCommand) GetCommand() string {
+func (c *ButtonPressedCommand) GetInput() string {
 	return c.ButtonCommand
 }
 
@@ -85,6 +129,7 @@ func (c *ButtonPressedCommand) GetCaption() string {
 	return c.ButtonText
 }
 
+//
 func CreateCommand(cmd string, place string, arguments []interface{}) Command {
 	if cmd == "text_input" {
 		text := ""
@@ -118,18 +163,28 @@ func CreateCommand(cmd string, place string, arguments []interface{}) Command {
 		}
 	}
 
+	if cmd == "instant" {
+		return &InstantTransitionCommand{Metadata: &Metadata{
+			Cmd:        cmd,
+			Place:      place,
+			Uniqueness: "",
+		}}
+	}
+
 	return nil
 }
 
 func ToHash(metadata *Metadata) string {
-	if metadata == nil {
-		panic("METADATA = NIL")
-	}
 	hash := md5.Sum([]byte(metadata.Cmd + metadata.Place + metadata.Uniqueness))
 	return hex.EncodeToString(hash[:])
 }
 
 func ToProtoHash(metadata *Metadata) string {
 	hash := md5.Sum([]byte(metadata.Cmd))
+	return hex.EncodeToString(hash[:])
+}
+
+func ToUniquenessHash(metadata *Metadata) string {
+	hash := md5.Sum([]byte(metadata.Uniqueness))
 	return hex.EncodeToString(hash[:])
 }

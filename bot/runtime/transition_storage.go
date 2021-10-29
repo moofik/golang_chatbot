@@ -46,6 +46,26 @@ func (ts *TransitionStorage) FindCommandByProto(command command.Command) command
 	return nil
 }
 
+func (ts *TransitionStorage) FindCommandByUniqueness(command command.Command) command.Command {
+	for _, element := range ts.transitionMap {
+		if element.Command.ToUniquenessHash() == command.ToUniquenessHash() {
+			return element.Command
+		}
+	}
+
+	return nil
+}
+
+func (ts *TransitionStorage) FindCommand(command command.Command) command.Command {
+	for _, element := range ts.transitionMap {
+		if element.Command.ToHash() == command.ToHash() {
+			return element.Command
+		}
+	}
+
+	return nil
+}
+
 func (ts *TransitionStorage) Add(c command.Command, t *petrinet.Transition) {
 	if ts.transitionMap == nil {
 		ts.transitionMap = map[string]*TransitionAndCommandElement{}

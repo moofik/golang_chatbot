@@ -17,14 +17,15 @@ type DefaultBot struct {
 	ScenarioName    string
 	TokenFactory    TokenFactory
 	TokenRepository TokenRepository
+	ActionRegistry  func(string, map[string]string) Action
 }
 
-func (b *DefaultBot) HandleRequest(mf *DefaultSerializedMessageFactory) {
+func (b *DefaultBot) HandleRequest(mf SerializedMessageFactory) {
 	cfg := config.GetScenarioConfig(b.ScenarioPath, b.ScenarioName)
-	provider, _ := GetProvider(cfg.ProviderConfig, cfg.Name, b.TokenFactory, mf)
+	provider, _ := GetProvider(cfg.ProviderConfig, cfg.Name, b.TokenFactory, mf, b.TokenRepository)
 
 	sbuilder := ScenarioBuilder{
-		ActionRegistry: nil,
+		ActionRegistry: b.ActionRegistry,
 		Repository:     nil,
 		Provider:       provider,
 		states:         nil,
@@ -36,7 +37,10 @@ func (b *DefaultBot) HandleRequest(mf *DefaultSerializedMessageFactory) {
 		panic(err)
 	}
 
-	token := s.HandleCommand()
+	token := s.Provider.GetToken()
+	currentState := s.GetCurrentState(token)
+	cmd := s.Provider.GetCommand(currentState)
+	token = s.HandleCommand(cmd, currentState, token)
 	b.TokenRepository.Persist(token)
 }
 
