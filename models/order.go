@@ -9,23 +9,23 @@ import (
 
 type Order struct {
 	gorm.Model
-	TokenID                   int
-	Token                     Token
-	MarketOrderKey            string
-	MarketOrderType           string
-	MarketOrderCurrency       string
-	MarketOrderBuyAmount      float64
-	MarketOrderBuyAddress     string
-	MarketOrderSellAmount     float64
-	MarketOrderSellCard       string
-	MarketOrderPaymentSum     float64
-	MarketOrderServiceAddress string
-	MarketOrderServiceCard    string
-	Revenue                   float64
-	IsDone                    bool
-	IsConfirmed               bool
-	CreatedAt                 time.Time // column name is `created_at`
-	UpdatedAt                 time.Time // column name is `updated_at`
+	TokenID        int
+	Token          Token
+	Key            string
+	Type           string
+	Currency       string
+	BuyAmount      float64
+	BuyAddress     string
+	SellAmount     float64
+	SellCard       string
+	PaymentSum     float64
+	ServiceAddress string
+	ServiceCard    string
+	Revenue        float64
+	IsDone         bool
+	IsConfirmed    bool
+	CreatedAt      time.Time // column name is `created_at`
+	UpdatedAt      time.Time // column name is `updated_at`
 }
 
 type OrderRepository struct {

@@ -28,7 +28,7 @@ func (a *SendTextMessage) Run(
 ) ActionError {
 	tmpl, err := template.New("test").Parse(a.params["text"])
 	if err != nil {
-		return &GenericActionError{innerError: err}
+		return &GenericActionError{InnerError: err}
 	}
 
 	var tpl bytes.Buffer
@@ -36,7 +36,7 @@ func (a *SendTextMessage) Run(
 	data := t.GetExtras()
 
 	if err := tmpl.Execute(&tpl, data); err != nil {
-		return &GenericActionError{innerError: err}
+		return &GenericActionError{InnerError: err}
 	}
 
 	result := tpl.String()
@@ -46,7 +46,7 @@ func (a *SendTextMessage) Run(
 		Token:   t,
 	})
 	if err != nil {
-		return &GenericActionError{innerError: err}
+		return &GenericActionError{InnerError: err}
 	}
 
 	return nil
@@ -130,9 +130,9 @@ type ActionError interface {
 }
 
 type GenericActionError struct {
-	innerError error
+	InnerError error
 }
 
 func (m *GenericActionError) Error() string {
-	return m.innerError.Error()
+	return m.InnerError.Error()
 }

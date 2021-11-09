@@ -109,6 +109,7 @@ func (p *TelegramProvider) SendTextMessage(text string, ctx ProviderContext) err
 	buttons := ctx.State.TransitionStorage.AllButtonCommands()
 
 	var buttonsSlice []map[string]string
+
 	for _, button := range buttons {
 		buttonsSlice = append(buttonsSlice, map[string]string{
 			"text":          button.GetCaption(),

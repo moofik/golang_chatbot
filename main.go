@@ -18,6 +18,8 @@ func main() {
 	// Migrate the schema
 	err = db.AutoMigrate(&models.Token{})
 	err = db.AutoMigrate(&models.Order{})
+	err = db.AutoMigrate(&models.Wallet{})
+	err = db.AutoMigrate(&models.WalletOrder{})
 
 	if err != nil {
 		panic(err)
@@ -42,7 +44,7 @@ func main() {
 	}
 
 	r := gin.Default()
-	r.POST("/", handler)
+	r.POST("/crypto", handler)
 
 	err = r.Run()
 	if err != nil {
