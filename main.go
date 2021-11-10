@@ -43,10 +43,17 @@ func main() {
 		bot.HandleRequest(&runtime.DefaultSerializedMessageFactory{Ctx: c})
 	}
 
+	healthcheckHandler := func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"message": "service is working",
+		})
+	}
+
 	r := gin.Default()
 	r.POST("/crypto", handler)
+	r.GET("/", healthcheckHandler)
 
-	err = r.Run()
+	err = r.Run(":8181")
 	if err != nil {
 		return
 	}
