@@ -1,7 +1,6 @@
 package runtime
 
 import (
-	"bot-daedalus/bot/command"
 	"bot-daedalus/petrinet"
 	"fmt"
 	"sort"
@@ -13,7 +12,7 @@ type State struct {
 	TransitionStorage *TransitionStorage
 }
 
-func (s *State) GetTransition(command command.Command) (*petrinet.Transition, StateError) {
+func (s *State) GetTransition(command Command) (*petrinet.Transition, StateError) {
 	transition := s.TransitionStorage.FindTransitionByCommand(command)
 	if transition == nil {
 		return nil, fmt.Errorf("transition not found for state %s and command %s", s.Name, command.Debug())
@@ -21,19 +20,39 @@ func (s *State) GetTransition(command command.Command) (*petrinet.Transition, St
 	return transition, nil
 }
 
-func (s *State) GetCommandByProto(command command.Command) (command.Command, StateError) {
+func (s *State) GetTransitionByUniqueness(command Command) (*petrinet.Transition, StateError) {
+	transition := s.TransitionStorage.FindTransitionByUniqueness(command)
+	if transition == nil {
+		return nil, fmt.Errorf("transition not found for state %s and command %s", s.Name, command.Debug())
+	}
+	return transition, nil
+}
+
+func (s *State) GetTransitionListByUniqueness(command Command) ([]*petrinet.Transition, StateError) {
+	transitions := s.TransitionStorage.FindTransitionListByUniqueness(command)
+	if len(transitions) == 0 {
+		return nil, fmt.Errorf("transition not found for state %s and command %s", s.Name, command.Debug())
+	}
+	return transitions, nil
+}
+
+func (s *State) GetCommandByProto(command Command) (Command, StateError) {
 	return s.TransitionStorage.FindCommandByProto(command), nil
 }
 
-func (s *State) GetCommandByUniqueness(command command.Command) (command.Command, StateError) {
+func (s *State) GetCommandByUniqueness(command Command) (Command, StateError) {
 	return s.TransitionStorage.FindCommandByUniqueness(command), nil
 }
 
-func (s *State) GetCommand(command command.Command) (command.Command, StateError) {
+func (s *State) GetCommandListByUniqueness(command Command) ([]Command, StateError) {
+	return s.TransitionStorage.FindCommandListByUniqueness(command), nil
+}
+
+func (s *State) GetCommand(command Command) (Command, StateError) {
 	return s.TransitionStorage.FindCommand(command), nil
 }
 
-func (s *State) Execute(token TokenProxy, provider ChatProvider, command command.Command, prevState *State) ActionError {
+func (s *State) Execute(token TokenProxy, provider ChatProvider, command Command, prevState *State) ActionError {
 	actions := map[string]Action{}
 
 	for _, action := range s.Actions {

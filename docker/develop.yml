@@ -1,26 +1,35 @@
 version: "3.3"
 
 services:
-
-  traefik:
-    image: "traefik:v2.5"
-    container_name: "traefik"
-    command:
-      #- "--log.level=DEBUG"
-      - "--api.insecure=true"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
+  web:
+    build: go
+    image: crypto/web
+    container_name: web
+    restart: always
     ports:
-      - "80:80"
-      - "8080:8080"
+      - "80:8181"
     volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - ../:/app
+    networks:
+      - crypto
 
-  whoami:
-    image: "traefik/whoami"
-    container_name: "simple-service"
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.whoami.rule=Host(`whoami.localhost`)"
-      - "traefik.http.routers.whoami.entrypoints=web"
+  db:
+    build: postgres
+    image: crypto/db
+    container_name: db
+    environment:
+      POSTGRES_PASSWORD: example
+    volumes:
+      - "./volumes/pgdata:/var/lib/postgresql/data"
+      - "./volumes/data:/opt/data"
+    tmpfs:
+      - /run
+      - /tmp
+    ports:
+      - "127.0.0.1:5432:5432"
+    networks:
+      - crypto
+
+networks:
+  crypto:
+    external: true

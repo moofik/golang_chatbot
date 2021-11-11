@@ -1,13 +1,12 @@
 package runtime
 
 import (
-	"bot-daedalus/bot/command"
 	"bytes"
 	"html/template"
 )
 
 type Action interface {
-	Run(p ChatProvider, t TokenProxy, s *State, prev *State, c command.Command) ActionError
+	Run(p ChatProvider, t TokenProxy, s *State, prev *State, c Command) ActionError
 	GetName() string
 }
 
@@ -24,7 +23,7 @@ func (a *SendTextMessage) Run(
 	t TokenProxy,
 	s *State,
 	prev *State,
-	c command.Command,
+	c Command,
 ) ActionError {
 	tmpl, err := template.New("test").Parse(a.params["text"])
 	if err != nil {
@@ -65,7 +64,7 @@ func (a *RememberInput) Run(
 	t TokenProxy,
 	s *State,
 	prev *State,
-	c command.Command,
+	c Command,
 ) ActionError {
 	extras := t.GetExtras()
 	extras[a.params["var"]] = c.GetInput()
@@ -86,12 +85,12 @@ func (a *RememberCaption) Run(
 	t TokenProxy,
 	s *State,
 	prev *State,
-	c command.Command,
+	c Command,
 ) ActionError {
-	newCmd := &command.ButtonPressedCommand{
+	newCmd := &ButtonPressedCommand{
 		ButtonCommand: c.GetInput(),
 		ButtonText:    c.GetCaption(),
-		Metadata: &command.Metadata{
+		Metadata: &Metadata{
 			Cmd:        "button",
 			Place:      s.Name,
 			Uniqueness: c.GetInput(),

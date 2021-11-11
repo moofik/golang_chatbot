@@ -1,14 +1,13 @@
 package runtime
 
 import (
-	"bot-daedalus/bot/command"
 	"bot-daedalus/petrinet"
 	"sort"
 )
 
 type TransitionAndCommandElement struct {
 	Transition *petrinet.Transition
-	Command    command.Command
+	Command    Command
 }
 
 type TransitionStorage struct {
@@ -16,7 +15,7 @@ type TransitionStorage struct {
 	transitionMap map[string]*TransitionAndCommandElement
 }
 
-func (ts *TransitionStorage) FindTransitionByCommand(command command.Command) *petrinet.Transition {
+func (ts *TransitionStorage) FindTransitionByCommand(command Command) *petrinet.Transition {
 	for _, element := range ts.transitionMap {
 		if element.Command.ToHash() == command.ToHash() {
 			return element.Transition
@@ -26,7 +25,29 @@ func (ts *TransitionStorage) FindTransitionByCommand(command command.Command) *p
 	return nil
 }
 
-func (ts *TransitionStorage) FindTransitionByProto(command command.Command) *petrinet.Transition {
+func (ts *TransitionStorage) FindTransitionByUniqueness(command Command) *petrinet.Transition {
+	for _, element := range ts.transitionMap {
+		if element.Command.ToUniquenessHash() == command.ToUniquenessHash() {
+			return element.Transition
+		}
+	}
+
+	return nil
+}
+
+func (ts *TransitionStorage) FindTransitionListByUniqueness(command Command) []*petrinet.Transition {
+	var tss []*petrinet.Transition
+
+	for _, element := range ts.transitionMap {
+		if element.Command.ToUniquenessHash() == command.ToUniquenessHash() {
+			tss = append(tss, element.Transition)
+		}
+	}
+
+	return tss
+}
+
+func (ts *TransitionStorage) FindTransitionByProto(command Command) *petrinet.Transition {
 	for _, element := range ts.transitionMap {
 		if element.Command.ToProtoHash() == command.ToProtoHash() {
 			return element.Transition
@@ -36,7 +57,7 @@ func (ts *TransitionStorage) FindTransitionByProto(command command.Command) *pet
 	return nil
 }
 
-func (ts *TransitionStorage) FindCommandByProto(command command.Command) command.Command {
+func (ts *TransitionStorage) FindCommandByProto(command Command) Command {
 	for _, element := range ts.transitionMap {
 		if element.Command.ToProtoHash() == command.ToProtoHash() {
 			return element.Command
@@ -46,7 +67,7 @@ func (ts *TransitionStorage) FindCommandByProto(command command.Command) command
 	return nil
 }
 
-func (ts *TransitionStorage) FindCommandByUniqueness(command command.Command) command.Command {
+func (ts *TransitionStorage) FindCommandByUniqueness(command Command) Command {
 	for _, element := range ts.transitionMap {
 		if element.Command.ToUniquenessHash() == command.ToUniquenessHash() {
 			return element.Command
@@ -56,7 +77,7 @@ func (ts *TransitionStorage) FindCommandByUniqueness(command command.Command) co
 	return nil
 }
 
-func (ts *TransitionStorage) FindCommand(command command.Command) command.Command {
+func (ts *TransitionStorage) FindCommand(command Command) Command {
 	for _, element := range ts.transitionMap {
 		if element.Command.ToHash() == command.ToHash() {
 			return element.Command
@@ -66,7 +87,7 @@ func (ts *TransitionStorage) FindCommand(command command.Command) command.Comman
 	return nil
 }
 
-func (ts *TransitionStorage) Add(c command.Command, t *petrinet.Transition) {
+func (ts *TransitionStorage) Add(c Command, t *petrinet.Transition) {
 	if ts.transitionMap == nil {
 		ts.transitionMap = map[string]*TransitionAndCommandElement{}
 	}
@@ -127,11 +148,23 @@ func (ts *TransitionStorage) Count() int {
 	return len(ts.transitionMap)
 }
 
-func (ts *TransitionStorage) AllButtonCommands() []command.Command {
-	var commandsSlice []command.Command
+func (ts *TransitionStorage) AllButtonCommands() []Command {
+	var commandsSlice []Command
 
 	for _, element := range ts.transitionMap {
 		if element.Command.GetMetadata().Cmd == "button" {
+			commandsSlice = append(commandsSlice, element.Command)
+		}
+	}
+
+	return commandsSlice
+}
+
+func (ts *TransitionStorage) FindCommandListByUniqueness(c Command) []Command {
+	var commandsSlice []Command
+
+	for _, element := range ts.transitionMap {
+		if element.Command.ToUniquenessHash() == c.ToUniquenessHash() {
 			commandsSlice = append(commandsSlice, element.Command)
 		}
 	}

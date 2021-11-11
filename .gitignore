@@ -1,4 +1,6 @@
 test.db
 .idea
+.env
 go.sum
 vendor
+docker/traefik/acme.json

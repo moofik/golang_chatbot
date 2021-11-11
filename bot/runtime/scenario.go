@@ -1,7 +1,6 @@
 package runtime
 
 import (
-	"bot-daedalus/bot/command"
 	"bot-daedalus/petrinet"
 	"fmt"
 	"reflect"
@@ -33,49 +32,77 @@ func (s *Scenario) GetCurrentState(token TokenProxy) *State {
 	return nil
 }
 
-func (s *Scenario) HandleCommand(cmd command.Command, currentState *State, token TokenProxy) TokenProxy {
+func (s *Scenario) HandleCommand(cmd Command, currentState *State, token TokenProxy) TokenProxy {
 	// get state by token
 	// run state actions
 	if cmd == nil {
-		fmt.Sprintf("command not found for token %d and scenario %s", token.GetChatId(), s.Provider.GetScenarioName())
+		_ = fmt.Sprintf("command not found for token %d and scenario %s", token.GetChatId(), s.Provider.GetScenarioName())
 		return token
 	}
-	/*
-		fmt.Println()
-		fmt.Println("-------------")
-		fmt.Println(cmd.Debug())
-		fmt.Println("-------------")
-		fmt.Println()
-	*/
-	transition, err := currentState.GetTransition(cmd)
+
+	var actualTransition *petrinet.Transition
+	var err error
+
+	if cmd.GetType() == TYPE_TEXT_INPUT {
+		var transitions []*petrinet.Transition
+		var commands []Command
+		transitions, err = currentState.GetTransitionListByUniqueness(cmd)
+		//finding valid transitions
+		commands, err = currentState.GetCommandListByUniqueness(cmd)
+
+		for _, c := range commands {
+			for _, t := range transitions {
+				if c.Pass(s.Provider, token, t) {
+					actualTransition = t
+					break
+				}
+			}
+
+			if actualTransition != nil {
+				break
+			}
+		}
+	} else {
+		actualTransition, err = currentState.GetTransition(cmd)
+	}
+
+	if actualTransition == nil {
+		fmt.Println("actual transition not found")
+		return token
+	}
 
 	if err != nil {
 		// handle state error
-		s.Provider.SendTextMessage(err.Error(), ProviderContext{
+		err := s.Provider.SendTextMessage(err.Error(), ProviderContext{
 			State: currentState,
-			Command: &command.UserInputCommand{
+			Command: &UserInputCommand{
 				Text: "",
-				Metadata: &command.Metadata{
+				Metadata: &Metadata{
 					Cmd:   "/system",
 					Place: "noplace",
 				},
 			},
 			Token: token,
 		})
+
+		if err != nil {
+			return nil
+		}
+
 		return token
 	}
 
-	can, err := s.Workflow.CanFire(token, transition.Name)
+	can, err := s.Workflow.CanFire(token, actualTransition.Name)
 	var newState *State
 
 	if can {
-		newState = s.States[transition.To[0]]
+		newState = s.States[actualTransition.To[0]]
 		err := newState.Execute(token, s.Provider, cmd, currentState)
 		if err != nil {
 			panic(err.Error())
 			//handle action error
 		}
-		_, err = s.Workflow.Fire(token, transition.Name)
+		_, err = s.Workflow.Fire(token, actualTransition.Name)
 		if err != nil {
 			panic(err.Error())
 			//handle state error
@@ -91,7 +118,7 @@ func (s *Scenario) HandleCommand(cmd command.Command, currentState *State, token
 	}
 
 	if newState != nil {
-		newCmd, _ := newState.GetCommandByProto(&command.InstantTransitionCommand{Metadata: &command.Metadata{
+		newCmd, _ := newState.GetCommandByProto(&InstantTransitionCommand{Metadata: &Metadata{
 			Cmd:        "instant",
 			Place:      "",
 			Uniqueness: "",
@@ -268,7 +295,7 @@ func (b *ScenarioBuilder) walkTransitions(v reflect.Value) *TransitionStorage {
 		tr := v.Index(i).Elem()
 		stateTo := ""
 		name := ""
-		var commands []command.Command
+		var commands []Command
 
 		for _, kk := range tr.MapKeys() {
 			if kk.Elem().String() == "state_to" {
@@ -297,7 +324,7 @@ func (b *ScenarioBuilder) walkTransitions(v reflect.Value) *TransitionStorage {
 				}
 
 				if cmdType != "" {
-					newCmd := command.CreateCommand(cmdType, b.currentPlaceName, arguments)
+					newCmd := CreateCommand(cmdType, b.currentPlaceName, arguments)
 					commands = append(commands, newCmd)
 				}
 			}

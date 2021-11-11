@@ -1,7 +1,6 @@
 package runtime
 
 import (
-	"bot-daedalus/bot/command"
 	"bot-daedalus/petrinet"
 	"testing"
 )
@@ -12,9 +11,9 @@ func TestNext(t *testing.T) {
 		transitionMap: nil,
 	}
 
-	ts.Add(&command.UserInputCommand{
+	ts.Add(&UserInputCommand{
 		Text: "1",
-		Metadata: &command.Metadata{
+		Metadata: &Metadata{
 			Cmd:        "1",
 			Place:      "1",
 			Uniqueness: "1",
@@ -25,9 +24,9 @@ func TestNext(t *testing.T) {
 		To:   []string{"2"},
 	})
 
-	ts.Add(&command.UserInputCommand{
+	ts.Add(&UserInputCommand{
 		Text: "2",
-		Metadata: &command.Metadata{
+		Metadata: &Metadata{
 			Cmd:        "2",
 			Place:      "2",
 			Uniqueness: "2",
@@ -38,9 +37,9 @@ func TestNext(t *testing.T) {
 		To:   []string{"3"},
 	})
 
-	ts.Add(&command.UserInputCommand{
+	ts.Add(&UserInputCommand{
 		Text: "3",
-		Metadata: &command.Metadata{
+		Metadata: &Metadata{
 			Cmd:        "3",
 			Place:      "3",
 			Uniqueness: "3",

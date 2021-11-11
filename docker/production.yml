@@ -4,7 +4,7 @@ services:
     image: traefik:v2.5
     container_name: traefik
     restart: unless-stopped
-    command: --api.insecure=true --providers.docker
+    command: --go.insecure=true --providers.docker
     ports:
       - "80:80"
       - "443:443"
@@ -32,21 +32,21 @@ services:
     networks:
       - crypto
 
-#  db:
-#    build: postgres
-#    image: crypto/postgresql
-#    environment:
-#      POSTGRES_PASSWORD: example
-#    volumes:
-#      - "./volumes/pgdata:/var/lib/postgresql/data"
-#      - "./volumes/data:/opt/data"
-#    tmpfs:
-#      - /run
-#      - /tmp
-#    ports:
-#      - "127.0.0.1:5432:5432"
-#    networks:
-#      - crypto
+  db:
+    build: postgres
+    image: crypto/postgresql
+    environment:
+      POSTGRES_PASSWORD: example
+    volumes:
+      - "./volumes/pgdata:/var/lib/postgresql/data"
+      - "./volumes/data:/opt/data"
+    tmpfs:
+      - /run
+      - /tmp
+    ports:
+      - "127.0.0.1:5432:5432"
+    networks:
+      - crypto
 
 networks:
   crypto:

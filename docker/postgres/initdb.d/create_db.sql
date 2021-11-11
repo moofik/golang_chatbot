@@ -27,4 +27,3 @@ LANGUAGE plpgsql VOLATILE;
 
 SELECT create_crypto_db();
 
-DROP FUNCTION create_crypto_db();

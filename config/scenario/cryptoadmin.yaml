@@ -1,0 +1,33 @@
+scenario:
+  name: cryptoadmin
+  provider:
+    name: telegram
+    token: '2140952227:AAEdQDEL2kuQByeUaYRIga4sutd3TcF4fko'
+
+  states:
+    -
+      name: unknown
+      transitions:
+        - {name: to_start, state_to: start, command: {type: 'text_input', arguments: ['/start']}}
+
+    -
+      name: start
+      actions:
+        send_text:
+          name: send_text
+          params:
+            text: >
+              Панель управления
+      transitions:
+        - {name: to_confirm, state_to: confirm, command: {type: 'button', arguments: ['/confirm', 'Подтвердить заказ']}}
+
+    -
+      name: confirm
+      actions:
+        send_text:
+          name: send_text
+          params:
+            text: >
+              Заказ подтвержден. Переход в панель управления...
+      transitions:
+        - {name: to_start_2, state_to: start, command: {type: 'instant']}}

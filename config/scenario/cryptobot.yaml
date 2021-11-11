@@ -1,5 +1,5 @@
 scenario:
-  name: tg_vcv_unbox
+  name: cryptobot
   provider:
     name: telegram
     token: '1799138792:AAGryx8c1D48yT8TAD5VCG1yzXs8k3tPtIc'
@@ -238,11 +238,15 @@ scenario:
           name: show_wallet
       transitions:
         - {name: to_main_menu_market_wallet, state_to: main_menu, command: {type: 'button', arguments: ['/to_main_menu_from_wallet', 'В главное меню']}}
-        - {name: to_wallet_buy_1, state_to: wallet_buy_1, command: {type: 'button', arguments: ['/to_main_menu_from_wallet', 'Купить']}}
+        - {name: to_wallet_buy_1, state_to: wallet_buy_1, command: {type: 'button', arguments: ['/to_wallet_buy_1_from_wallet', 'Купить']}}
+        - {name: to_wallet_sell_1, state_to: wallet_sell_1, command: {type: 'button', arguments: ['/to_wallet_sell_1_from_wallet', 'Продать']}}
 
     -
       name: wallet_buy_1
       actions:
+        remember_type:
+          name: remember_caption
+          params: { var: 'wallet_order_type' }
         send_text:
           name: send_text
           params:
@@ -310,3 +314,67 @@ scenario:
               Твой заказ принят в обработку. Средства будут переведены в течении суток. Номер твоего заказа: {{.wallet_last_order_key}}
       transitions:
         - {name: to_main_menu_wallet_buy, state_to: main_menu, command: {type: 'button', arguments: ['/to_main_menu_from_wb5', 'В главное меню']}}
+
+    -
+      name: wallet_sell_1
+      actions:
+        remember_type:
+          name: remember_caption
+          params: { var: 'wallet_order_type' }
+        send_text:
+          name: send_text
+          params:
+            text: >
+              Выберите валюту, которую вы хотите продать
+      transitions:
+        - {name: to_wallet_sell_2_wallet_1, state_to: wallet_sell_2, command: {type: 'button', arguments: ['/wallet_sell_btc', 'BTC']}}
+        - {name: to_wallet_sell_2_wallet_2, state_to: wallet_sell_2, command: {type: 'button', arguments: ['/wallet_sell_eth', 'ETH']}}
+        - {name: to_wallet_sell_2_wallet_3, state_to: wallet_sell_2, command: {type: 'button', arguments: ['/wallet_sell_bnb', 'BNB']}}
+        - {name: to_wallet_sell_2_wallet_4, state_to: wallet_sell_2, command: {type: 'button', arguments: ['/wallet_sell_usdt', 'USDT']}}
+        - {name: to_main_menu_wallet_sell, state_to: main_menu, command: {type: 'button', arguments: ['/to_main_menu_from_wallet_sell', 'В главное меню']}}
+
+    -
+      name: wallet_sell_2
+      actions:
+        remember_type:
+          name: remember_caption
+          params: { var: 'wallet_order_currency' }
+        send_text:
+          name: send_text
+          params:
+            text: >
+              Введи сумму в {{.wallet_order_currency}}, которую требуется продать
+      transitions:
+        - { name: to_wallet_sell_3, state_to: wallet_sell_3, command: { type: 'text_input' } }
+
+    -
+      name: wallet_sell_3
+      actions:
+        remember:
+          name: remember_input
+          params: { var: 'wallet_order_sell_amount' }
+      transitions:
+        - {name: to_main_menu_wallet_sell_3, state_to: main_menu, command: {type: 'button', arguments: ['/to_main_menu_from_wallet_sell_5', 'В главное меню']}}
+
+    -
+      name: wallet_sell_4
+      actions:
+        send_text:
+          name: send_text
+          params:
+            text: >
+              Бэбр 1
+      transitions:
+        - {name: to_main_menu_wallet_sell_2, state_to: main_menu, command: {type: 'button', arguments: ['/to_main_menu_from_wallet_sell_5', 'В главное меню']}}
+
+    -
+      name: wallet_sell_5
+      actions:
+        send_text:
+          name: send_text
+          params:
+            text: >
+              Бэбр 2
+      transitions:
+        - {name: to_main_menu_wallet_sell_3, state_to: main_menu, command: {type: 'button', arguments: ['/to_main_menu_from_wallet_sell_5', 'В главное меню']}}
+

@@ -42,12 +42,12 @@ func (r *OrderRepository) Delete(order *Order) {
 }
 
 func (r *OrderRepository) DeleteByOrderKey(orderKey string) {
-	r.DB.Delete(Order{}, "market_order_key = ? and is_confirmed IS NOT ?", orderKey, true)
+	r.DB.Delete(Order{}, "key = ? and is_confirmed IS NOT ?", orderKey, true)
 }
 
 func (r *OrderRepository) FindByOrderKey(orderKey string) *Order {
 	var order Order
-	res := r.DB.First(&order, "market_order_key = ? and deleted_at IS NULL", orderKey)
+	res := r.DB.First(&order, "key = ? and deleted_at IS NULL", orderKey)
 	if res.Error != nil {
 		return nil
 	}

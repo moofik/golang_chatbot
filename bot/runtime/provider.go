@@ -1,11 +1,11 @@
 package runtime
 
 import (
-	"bot-daedalus/bot/command"
 	"bot-daedalus/config"
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 )
 
@@ -15,7 +15,7 @@ const PROVIDER_WHATSAPP string = "whatsapp"
 const PROVIDER_FACEBOOK string = "facebook"
 
 type ChatProvider interface {
-	GetCommand(state *State) command.Command
+	GetCommand(state *State) Command
 	GetMessageFactory() SerializedMessageFactory
 	GetMessage() Message
 	GetToken() TokenProxy
@@ -45,7 +45,7 @@ func (p *TelegramProvider) GetTokenRepository() TokenRepository {
 	return p.TokenRepository
 }
 
-func (p *TelegramProvider) GetCommand(state *State) command.Command {
+func (p *TelegramProvider) GetCommand(state *State) Command {
 	m := GetTelegramMessage(p.message)
 
 	if m.Message.Text == "" && m.CallbackQuery.Data == "" {
@@ -69,7 +69,7 @@ func (p *TelegramProvider) GetCommand(state *State) command.Command {
 		for i, d := range dataSlice {
 			interfaceSlice[i] = d
 		}
-		return command.CreateCommand("button", state.Name, interfaceSlice)
+		return CreateCommand("button", state.Name, interfaceSlice)
 	}
 
 	var dataSlice []string = []string{m.Message.Text}
@@ -77,7 +77,7 @@ func (p *TelegramProvider) GetCommand(state *State) command.Command {
 	for i, d := range dataSlice {
 		interfaceSlice[i] = d
 	}
-	return command.CreateCommand("text_input", state.Name, interfaceSlice)
+	return CreateCommand("text_input", state.Name, interfaceSlice)
 }
 
 func (p *TelegramProvider) getTokedId() uint {
@@ -106,6 +106,7 @@ func (p *TelegramProvider) GetMessage() Message {
 }
 
 func (p *TelegramProvider) SendTextMessage(text string, ctx ProviderContext) error {
+	fmt.Println("SENDING TEXT MSG")
 	buttons := ctx.State.TransitionStorage.AllButtonCommands()
 
 	var buttonsSlice []map[string]string
@@ -144,8 +145,11 @@ func (p *TelegramProvider) SendTextMessage(text string, ctx ProviderContext) err
 	)
 
 	if err != nil {
+		fmt.Println(err.Error())
 		return err
 	}
+
+	fmt.Println("status code: " + res.Status)
 
 	if res.StatusCode != http.StatusOK {
 		return errors.New("unexpected status" + res.Status)
@@ -156,6 +160,6 @@ func (p *TelegramProvider) SendTextMessage(text string, ctx ProviderContext) err
 
 type ProviderContext struct {
 	State   *State
-	Command command.Command
+	Command Command
 	Token   TokenProxy
 }

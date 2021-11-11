@@ -7,23 +7,26 @@ import (
 
 type WalletOrder struct {
 	gorm.Model
-	TokenID     int
-	Token       Token
-	WalletID    int
-	Wallet      Wallet
-	Key         string
-	DoneKey     string
-	Type        string
-	Currency    string
-	SellAmount  float64
-	BuyAmount   float64
-	PaymentSum  float64
-	ServiceCard string
-	Revenue     float64
-	IsConfirmed bool
-	IsDone      bool
-	CreatedAt   time.Time // column name is `created_at`
-	UpdatedAt   time.Time // column name is `updated_at`
+	TokenID         int
+	Token           Token
+	WalletID        int
+	Wallet          Wallet
+	Key             string
+	DoneKey         string
+	Type            string
+	Currency        string
+	SellAmount      float64
+	BuyAmount       float64
+	PaymentSum      float64
+	ServiceCard     string
+	ClientCard      string
+	ExchangeAddress string
+	ExchangeAmount  float64
+	Revenue         float64
+	IsConfirmed     bool
+	IsDone          bool
+	CreatedAt       time.Time // column name is `created_at`
+	UpdatedAt       time.Time // column name is `updated_at`
 }
 
 type WalletOrderRepository struct {
@@ -58,7 +61,7 @@ func (r *WalletOrderRepository) FindOrderById(walletId uint) *WalletOrder {
 
 func (r *WalletOrderRepository) FindLastOrderByTokenId(tokenId uint) *WalletOrder {
 	var walletOrder WalletOrder
-	res := r.DB.Last(&walletOrder, "tokenId = ?", tokenId)
+	res := r.DB.Last(&walletOrder, "token_id = ?", tokenId)
 	if res.Error != nil {
 		return nil
 	}
@@ -67,7 +70,7 @@ func (r *WalletOrderRepository) FindLastOrderByTokenId(tokenId uint) *WalletOrde
 
 func (r *WalletOrderRepository) FindOrderByKey(orderKey string) *WalletOrder {
 	var walletOrder WalletOrder
-	res := r.DB.Last(&walletOrder, "order_key = ?", orderKey)
+	res := r.DB.Last(&walletOrder, "key = ?", orderKey)
 	if res.Error != nil {
 		return nil
 	}

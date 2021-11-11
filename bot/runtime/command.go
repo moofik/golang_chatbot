@@ -1,10 +1,16 @@
-package command
+package runtime
 
 import (
+	"bot-daedalus/petrinet"
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
 )
+
+const TYPE_TEXT_INPUT = "text_input"
+const TYPE_BUTTON = "button"
+const TYPE_INSTANT = "instant"
+const TYPE_VALIDATE = "validate"
 
 type Metadata struct {
 	Cmd        string
@@ -20,6 +26,8 @@ type Command interface {
 	GetMetadata() *Metadata
 	GetInput() string
 	GetCaption() string
+	Pass(p ChatProvider, t TokenProxy, tr *petrinet.Transition) bool
+	GetType() string
 }
 
 type ForceCommand interface {
@@ -60,6 +68,14 @@ func (c *InstantTransitionCommand) ToUniquenessHash() string {
 	return ToUniquenessHash(c.Metadata)
 }
 
+func (c *InstantTransitionCommand) Pass(p ChatProvider, t TokenProxy, tr *petrinet.Transition) bool {
+	return true
+}
+
+func (c *InstantTransitionCommand) GetType() string {
+	return "instant"
+}
+
 //
 type UserInputCommand struct {
 	Text     string
@@ -92,6 +108,14 @@ func (c *UserInputCommand) GetInput() string {
 
 func (c *UserInputCommand) GetCaption() string {
 	return "user_text_command"
+}
+
+func (c *UserInputCommand) Pass(p ChatProvider, t TokenProxy, tr *petrinet.Transition) bool {
+	return true
+}
+
+func (c *UserInputCommand) GetType() string {
+	return "text_input"
 }
 
 //
@@ -127,6 +151,14 @@ func (c *ButtonPressedCommand) GetInput() string {
 
 func (c *ButtonPressedCommand) GetCaption() string {
 	return c.ButtonText
+}
+
+func (c *ButtonPressedCommand) GetType() string {
+	return "button"
+}
+
+func (c *ButtonPressedCommand) Pass(p ChatProvider, t TokenProxy, tr *petrinet.Transition) bool {
+	return true
 }
 
 //

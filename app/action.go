@@ -1,7 +1,6 @@
 package app
 
 import (
-	"bot-daedalus/bot/command"
 	"bot-daedalus/bot/runtime"
 	"bot-daedalus/models"
 	"bytes"
@@ -36,13 +35,15 @@ func (ar *ActionRegistry) ActionRegistryHandler(name string, params map[string]s
 
 	if name == "cancel_order_data" {
 		return &CancelOrderData{
-			OrderRepository: &models.OrderRepository{DB: ar.DB},
+			OrderRepository:       &models.OrderRepository{DB: ar.DB},
+			WalletOrderRepository: &models.WalletOrderRepository{DB: ar.DB},
 		}
 	}
 
 	if name == "confirm_market_order" {
 		return &ConfirmMarketOrder{
-			OrderRepository: &models.OrderRepository{DB: ar.DB},
+			OrderRepository:    &models.OrderRepository{DB: ar.DB},
+			SettingsRepository: &models.SettingsRepository{DB: ar.DB},
 		}
 	}
 
@@ -69,6 +70,7 @@ func (ar *ActionRegistry) ActionRegistryHandler(name string, params map[string]s
 		return &NotifyWalletBuyOrder{
 			WalletOrderRepository: &models.WalletOrderRepository{DB: ar.DB},
 			WalletRepository:      &models.WalletRepository{DB: ar.DB},
+			SettingsRepository:    &models.SettingsRepository{DB: ar.DB},
 		}
 	}
 
@@ -88,7 +90,7 @@ func (a *CalculateMarketBuyOrder) Run(
 	t runtime.TokenProxy,
 	s *runtime.State,
 	prev *runtime.State,
-	c command.Command,
+	c runtime.Command,
 ) runtime.ActionError {
 	extras := t.GetExtras()
 	buyAmount, err := strconv.ParseFloat(extras["market_order_buy_amount"], 64)
@@ -141,7 +143,7 @@ func (a *CalculateMarketSellOrder) Run(
 	t runtime.TokenProxy,
 	s *runtime.State,
 	prev *runtime.State,
-	c command.Command,
+	c runtime.Command,
 ) runtime.ActionError {
 	extras := t.GetExtras()
 	sellAmount, err := strconv.ParseFloat(extras["market_order_sell_amount"], 64)
@@ -182,7 +184,8 @@ func (a *CalculateMarketSellOrder) Run(
 }
 
 type ConfirmMarketOrder struct {
-	OrderRepository *models.OrderRepository
+	OrderRepository    *models.OrderRepository
+	SettingsRepository *models.SettingsRepository
 }
 
 func (a *ConfirmMarketOrder) GetName() string {
@@ -194,7 +197,7 @@ func (a *ConfirmMarketOrder) Run(
 	t runtime.TokenProxy,
 	s *runtime.State,
 	prev *runtime.State,
-	c command.Command,
+	c runtime.Command,
 ) runtime.ActionError {
 	extras := t.GetExtras()
 	orderKey := extras["market_last_order_key"]
@@ -228,12 +231,22 @@ func (a *ConfirmMarketOrder) Run(
 		return nil
 	}
 
-	NotifyAdmins(text)
+	settings := a.SettingsRepository.FindByScenarioName(p.GetScenarioName())
+
+	if settings != nil {
+		for _, id := range settings.GetTelegramAdminsIds() {
+			for _, botToken := range settings.GetTelegramNotificationChannelsTokens() {
+				NotifyAdmins(text, id, botToken)
+			}
+		}
+	}
+
 	return nil
 }
 
 type CancelOrderData struct {
-	OrderRepository *models.OrderRepository
+	OrderRepository       *models.OrderRepository
+	WalletOrderRepository *models.WalletOrderRepository
 }
 
 func (a *CancelOrderData) GetName() string {
@@ -245,15 +258,24 @@ func (a *CancelOrderData) Run(
 	t runtime.TokenProxy,
 	s *runtime.State,
 	prev *runtime.State,
-	c command.Command,
+	c runtime.Command,
 ) runtime.ActionError {
 	extras := t.GetExtras()
 	key, keyOk := extras["market_last_order_key"]
 
 	if keyOk {
 		order := a.OrderRepository.FindByOrderKey(key)
-		if !order.IsConfirmed {
+		if order != nil && !order.IsConfirmed {
 			a.OrderRepository.Delete(order)
+		}
+	}
+
+	key, keyOk = extras["wallet_last_order_key"]
+
+	if keyOk {
+		walletOrder := a.WalletOrderRepository.FindOrderByKey(key)
+		if walletOrder != nil && !walletOrder.IsConfirmed {
+			a.WalletOrderRepository.Delete(walletOrder)
 		}
 	}
 
@@ -269,6 +291,13 @@ func (a *CancelOrderData) Run(
 		"market_order_service_card,",
 		"market_order_service_address",
 		"market_last_order_key",
+		"wallet_last_order_key",
+		"wallet_order_buy_amount",
+		"wallet_order_currency",
+		"wallet_order_payment_sum",
+		"wallet_order_service_card",
+		"wallet_order_sell_amount",
+		"wallet_order_type",
 	}
 
 	for _, extra := range extrasToDelete {
@@ -296,7 +325,7 @@ func (a *ShowWallet) Run(
 	t runtime.TokenProxy,
 	s *runtime.State,
 	prev *runtime.State,
-	c command.Command,
+	c runtime.Command,
 ) runtime.ActionError {
 	text := "<b>- BTC</b>: {{.btc}} \n\n<b>- ETH</b>: {{.eth}} \n\n<b>- BNB</b>: {{.bnb}} \n\n<b>- USDT</b>: {{.usdt}}"
 	tmpl, err := template.New("test").Parse(text)
@@ -344,7 +373,7 @@ func (a *CreateWallet) Run(
 	t runtime.TokenProxy,
 	s *runtime.State,
 	prev *runtime.State,
-	c command.Command,
+	c runtime.Command,
 ) runtime.ActionError {
 	wallet := a.WalletRepository.FindWalletByTokenId(t.GetId())
 
@@ -379,17 +408,19 @@ func (a *CalculateWalletBuyOrder) Run(
 	t runtime.TokenProxy,
 	s *runtime.State,
 	prev *runtime.State,
-	c command.Command,
+	c runtime.Command,
 ) runtime.ActionError {
 	extras := t.GetExtras()
 	buyAmount, err := strconv.ParseFloat(extras["wallet_order_buy_amount"], 64)
 	if err != nil {
-		return nil
+		fmt.Println("error: " + err.Error())
+		return &runtime.GenericActionError{InnerError: err}
 	}
 
 	paymentSum, actualPrice, err := ConvertCrypto(extras["wallet_order_currency"], "RUB", buyAmount, true)
 	if err != nil {
-		return nil
+		fmt.Println("error: " + err.Error())
+		return &runtime.GenericActionError{InnerError: err}
 	}
 
 	orderNumber := uuid.New().String()
@@ -418,12 +449,14 @@ func (a *CalculateWalletBuyOrder) Run(
 	extras["wallet_order_service_card"] = cardNumber
 	extras["wallet_last_order_key"] = orderNumber
 	t.SetExtras(extras)
+
 	return nil
 }
 
 type NotifyWalletBuyOrder struct {
 	WalletOrderRepository *models.WalletOrderRepository
 	WalletRepository      *models.WalletRepository
+	SettingsRepository    *models.SettingsRepository
 }
 
 func (a *NotifyWalletBuyOrder) GetName() string {
@@ -435,12 +468,16 @@ func (a *NotifyWalletBuyOrder) Run(
 	t runtime.TokenProxy,
 	s *runtime.State,
 	prev *runtime.State,
-	c command.Command,
+	c runtime.Command,
 ) runtime.ActionError {
 	wallet := a.WalletRepository.FindWalletByTokenId(t.GetId())
 	walletOrder := a.WalletOrderRepository.FindLastOrderByWalletId(wallet.ID)
+	walletOrder.IsConfirmed = true
+	a.WalletOrderRepository.Persist(walletOrder)
+	settings := a.SettingsRepository.FindByScenarioName(p.GetScenarioName())
 
 	if walletOrder.Type == "Купить" {
+		fmt.Println("send notification about wallet buy")
 		text := fmt.Sprintf(
 			"Покупка на кошелек бота, новый заказ %s: покупка %f %s за %d руб., карта на которую пользователь отправит деньги - %s, код завершения сделки - %s",
 			walletOrder.Key,
@@ -451,7 +488,13 @@ func (a *NotifyWalletBuyOrder) Run(
 			walletOrder.DoneKey,
 		)
 
-		NotifyAdmins(text)
+		if settings != nil {
+			for _, id := range settings.GetTelegramAdminsIds() {
+				for _, botToken := range settings.GetTelegramNotificationChannelsTokens() {
+					NotifyAdmins(text, id, botToken)
+				}
+			}
+		}
 	} else {
 		return nil
 	}
@@ -459,11 +502,11 @@ func (a *NotifyWalletBuyOrder) Run(
 	return nil
 }
 
-func NotifyAdmins(text string) {
+func NotifyAdmins(text string, chatId int, botToken string) {
 	url := "https://api.telegram.org/bot1799138792:AAGryx8c1D48yT8TAD5VCG1yzXs8k3tPtIc/sendMessage"
 
 	reqBody := &runtime.TelegramOutgoingMessage{
-		ChatID:    131231613,
+		ChatID:    uint(chatId),
 		Text:      text,
 		ParseMode: "HTML",
 	}
