@@ -76,3 +76,12 @@ func (r *WalletOrderRepository) FindOrderByKey(orderKey string) *WalletOrder {
 	}
 	return &walletOrder
 }
+
+func (r *WalletOrderRepository) FindByDoneKey(doneKey string) *WalletOrder {
+	var walletOrder WalletOrder
+	res := r.DB.Last(&walletOrder, "done_key = ? and deleted_at is null and is_done is false", doneKey)
+	if res.Error != nil {
+		return nil
+	}
+	return &walletOrder
+}

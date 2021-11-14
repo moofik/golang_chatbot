@@ -4,11 +4,13 @@ import (
 	"bot-daedalus/app"
 	"bot-daedalus/bot/runtime"
 	"bot-daedalus/models"
+	"bytes"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"io/ioutil"
 	"os"
 )
 
@@ -18,6 +20,13 @@ type Config struct {
 	PreferSimpleProtocol bool
 	WithoutReturning     bool
 	Conn                 gorm.ConnPool
+}
+
+func logRequestMiddleware(c *gin.Context) {
+	body, _ := ioutil.ReadAll(c.Request.Body)
+	println(string(body))
+
+	c.Request.Body = ioutil.NopCloser(bytes.NewReader(body))
 }
 
 func main() {
@@ -47,27 +56,45 @@ func main() {
 		panic(err)
 	}
 
-	handler := func(c *gin.Context) {
-		actionRegistry := app.ActionRegistry{DB: db}
-		bot := runtime.DefaultBot{
-			ScenarioPath:    "config/scenario",
-			ScenarioName:    "cryptobot",
-			TokenFactory:    models.TokenFactory{DB: db},
-			TokenRepository: &models.TokenRepository{DB: db},
-			ActionRegistry:  actionRegistry.ActionRegistryHandler,
-		}
-
-		bot.HandleRequest(&runtime.DefaultSerializedMessageFactory{Ctx: c})
-	}
-
 	healthcheckHandler := func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "service is working",
 		})
 	}
 
+	cryptoClientHandler := func(c *gin.Context) {
+		actionRegistry := app.ActionRegistry{DB: db}
+		commandRegistry := app.CommandRegistry{DB: db}
+		bot := runtime.DefaultBot{
+			ScenarioPath:    "config/scenario",
+			ScenarioName:    "cryptobot",
+			TokenFactory:    models.TokenFactory{DB: db},
+			TokenRepository: &models.TokenRepository{DB: db},
+			ActionRegistry:  actionRegistry.ActionRegistryHandler,
+			CommandRegistry: commandRegistry.CommandRegistryHandler,
+		}
+		logRequestMiddleware(c)
+		bot.HandleRequest(&runtime.DefaultSerializedMessageFactory{Ctx: c})
+	}
+
+	cryptoAdminHandler := func(c *gin.Context) {
+		actionRegistry := app.ActionRegistry{DB: db}
+		commandRegistry := app.CommandRegistry{DB: db}
+		bot := runtime.DefaultBot{
+			ScenarioPath:    "config/scenario",
+			ScenarioName:    "cryptoadmin",
+			TokenFactory:    models.TokenFactory{DB: db},
+			TokenRepository: &models.TokenRepository{DB: db},
+			ActionRegistry:  actionRegistry.ActionRegistryHandler,
+			CommandRegistry: commandRegistry.CommandRegistryHandler,
+		}
+		logRequestMiddleware(c)
+		bot.HandleRequest(&runtime.DefaultSerializedMessageFactory{Ctx: c})
+	}
+
 	r := gin.Default()
-	r.POST("/crypto", handler)
+	r.POST("/crypto", cryptoClientHandler)
+	r.POST("/cryptoadmin", cryptoAdminHandler)
 	r.GET("/", healthcheckHandler)
 
 	err = r.Run(":8181")

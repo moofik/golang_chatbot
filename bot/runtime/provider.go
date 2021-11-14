@@ -69,7 +69,7 @@ func (p *TelegramProvider) GetCommand(state *State) Command {
 		for i, d := range dataSlice {
 			interfaceSlice[i] = d
 		}
-		return CreateCommand("button", state.Name, interfaceSlice)
+		return CreateCommand("button", state.Name, interfaceSlice, nil)
 	}
 
 	var dataSlice []string = []string{m.Message.Text}
@@ -77,7 +77,7 @@ func (p *TelegramProvider) GetCommand(state *State) Command {
 	for i, d := range dataSlice {
 		interfaceSlice[i] = d
 	}
-	return CreateCommand("text_input", state.Name, interfaceSlice)
+	return CreateCommand("text_input", state.Name, interfaceSlice, nil)
 }
 
 func (p *TelegramProvider) getTokedId() uint {
@@ -109,12 +109,14 @@ func (p *TelegramProvider) SendTextMessage(text string, ctx ProviderContext) err
 	fmt.Println("SENDING TEXT MSG")
 	buttons := ctx.State.TransitionStorage.AllButtonCommands()
 
-	var buttonsSlice []map[string]string
+	var buttonsSlice [][]map[string]string
 
 	for _, button := range buttons {
-		buttonsSlice = append(buttonsSlice, map[string]string{
-			"text":          button.GetCaption(),
-			"callback_data": button.GetInput(),
+		buttonsSlice = append(buttonsSlice, []map[string]string{
+			{
+				"text":          button.GetCaption(),
+				"callback_data": button.GetInput(),
+			},
 		})
 	}
 
@@ -126,7 +128,7 @@ func (p *TelegramProvider) SendTextMessage(text string, ctx ProviderContext) err
 
 	if len(buttonsSlice) > 0 {
 		reqBody.ReplyMarkup = map[string][][]map[string]string{
-			"inline_keyboard": {buttonsSlice},
+			"inline_keyboard": buttonsSlice,
 		}
 	}
 

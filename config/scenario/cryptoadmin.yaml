@@ -19,15 +19,28 @@ scenario:
             text: >
               Панель управления
       transitions:
-        - {name: to_confirm, state_to: confirm, command: {type: 'button', arguments: ['/confirm', 'Подтвердить заказ']}}
+        - {name: to_confirm, state_to: confirm_1, command: {type: 'button', arguments: ['/confirm', 'Подтвердить заказ']}}
 
     -
-      name: confirm
+      name: confirm_1
       actions:
         send_text:
           name: send_text
           params:
             text: >
-              Заказ подтвержден. Переход в панель управления...
+              Отправьте код завершения сделки.
       transitions:
-        - {name: to_start_2, state_to: start, command: {type: 'instant']}}
+        - {name: to_confirm_2, state_to: confirm_2, command: {type: 'text_input'}}
+
+    -
+      name: confirm_2
+      actions:
+        confirm_order:
+          name: confirm_order
+        send_text:
+          name: send_text
+          params:
+            text: >
+              Сделка подтверждена.
+      transitions:
+        - {name: to_start, state_to: start, command: {type: 'instant'}}

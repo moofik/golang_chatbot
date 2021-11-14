@@ -90,7 +90,7 @@ func (a *RememberCaption) Run(
 	newCmd := &ButtonPressedCommand{
 		ButtonCommand: c.GetInput(),
 		ButtonText:    c.GetCaption(),
-		Metadata: &Metadata{
+		Metadata: &CommandMetadata{
 			Cmd:        "button",
 			Place:      s.Name,
 			Uniqueness: c.GetInput(),

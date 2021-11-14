@@ -12,6 +12,7 @@ type Order struct {
 	TokenID        int
 	Token          Token
 	Key            string
+	DoneKey        string
 	Type           string
 	Currency       string
 	BuyAmount      float64
@@ -48,6 +49,15 @@ func (r *OrderRepository) DeleteByOrderKey(orderKey string) {
 func (r *OrderRepository) FindByOrderKey(orderKey string) *Order {
 	var order Order
 	res := r.DB.First(&order, "key = ? and deleted_at IS NULL", orderKey)
+	if res.Error != nil {
+		return nil
+	}
+	return &order
+}
+
+func (r *OrderRepository) FindByDoneKey(doneKey string) *Order {
+	var order Order
+	res := r.DB.First(&order, "done_key = ? and is_done = false and deleted_at IS NULL", doneKey)
 	if res.Error != nil {
 		return nil
 	}

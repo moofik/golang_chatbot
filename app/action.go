@@ -66,11 +66,33 @@ func (ar *ActionRegistry) ActionRegistryHandler(name string, params map[string]s
 		}
 	}
 
-	if name == "notify_wallet_buy_order" {
-		return &NotifyWalletBuyOrder{
+	if name == "notify_wallet_order" {
+		return &NotifyWalletOrder{
 			WalletOrderRepository: &models.WalletOrderRepository{DB: ar.DB},
 			WalletRepository:      &models.WalletRepository{DB: ar.DB},
 			SettingsRepository:    &models.SettingsRepository{DB: ar.DB},
+		}
+	}
+
+	if name == "calculate_wallet_sell_order" {
+		return &CalculateWalletSellOrder{
+			WalletOrderRepository: &models.WalletOrderRepository{DB: ar.DB},
+			WalletRepository:      &models.WalletRepository{DB: ar.DB},
+		}
+	}
+
+	if name == "calculate_wallet_exchange_order" {
+		return &CalculateWalletExchangeOrder{
+			WalletOrderRepository: &models.WalletOrderRepository{DB: ar.DB},
+			WalletRepository:      &models.WalletRepository{DB: ar.DB},
+		}
+	}
+
+	if name == "confirm_order" {
+		return &ConfirmOrder{
+			WalletRepository:      &models.WalletRepository{DB: ar.DB},
+			WalletOrderRepository: &models.WalletOrderRepository{DB: ar.DB},
+			OrderRepository:       &models.OrderRepository{DB: ar.DB},
 		}
 	}
 
@@ -110,6 +132,7 @@ func (a *CalculateMarketBuyOrder) Run(
 		Model:       gorm.Model{},
 		TokenID:     int(t.GetId()),
 		Key:         orderNumber,
+		DoneKey:     "market_" + uuid.NewString(),
 		Type:        extras["market_order_type"],
 		Currency:    extras["market_order_currency"],
 		BuyAmount:   buyAmount,
@@ -163,6 +186,7 @@ func (a *CalculateMarketSellOrder) Run(
 		Model:          gorm.Model{},
 		TokenID:        int(t.GetId()),
 		Key:            orderNumber,
+		DoneKey:        "market_" + uuid.NewString(),
 		Type:           extras["market_order_type"],
 		Currency:       extras["market_order_currency"],
 		SellAmount:     sellAmount,
@@ -209,23 +233,25 @@ func (a *ConfirmMarketOrder) Run(
 
 	if order.Type == "Купить" {
 		text = fmt.Sprintf(
-			"Новый заказ %s: покупка %f %s за %d руб., адрес кошелька покупки - %s, карта на которую пользователь отправит деньги - %s",
+			"Маркет: новый заказ %s, покупка %f %s за %d руб., адрес кошелька покупки - %s, карта на которую пользователь отправит деньги - %s, код завершения сделки - %s",
 			order.Key,
 			order.BuyAmount,
 			order.Currency,
 			int(order.PaymentSum),
 			order.BuyAddress,
 			order.ServiceCard,
+			order.DoneKey,
 		)
 	} else if order.Type == "Продать" {
 		text = fmt.Sprintf(
-			"Новый заказ %s: продажа %f %s за %d руб., карта пользователя для вывода средств - %s, адрес кошелька куда пользователь отправит валюту - %s",
+			"Маркет: новый заказ %s, продажа %f %s за %d руб., карта пользователя для вывода средств - %s, адрес кошелька куда пользователь отправит валюту - %s, код завершения сделки - %s",
 			order.Key,
 			order.SellAmount,
 			order.Currency,
 			int(order.PaymentSum),
 			order.SellCard,
 			order.ServiceAddress,
+			order.DoneKey,
 		)
 	} else {
 		return nil
@@ -286,7 +312,6 @@ func (a *CancelOrderData) Run(
 		"market_order_buy_address",
 		"market_order_sell_amount",
 		"market_order_sell_card",
-		"market_order_sell_amount",
 		"market_order_payment_sum",
 		"market_order_service_card,",
 		"market_order_service_address",
@@ -296,6 +321,9 @@ func (a *CancelOrderData) Run(
 		"wallet_order_currency",
 		"wallet_order_payment_sum",
 		"wallet_order_service_card",
+		"wallet_order_client_card",
+		"wallet_order_exchange_address",
+		"wallet_order_exchange_amount",
 		"wallet_order_sell_amount",
 		"wallet_order_type",
 	}
@@ -439,7 +467,7 @@ func (a *CalculateWalletBuyOrder) Run(
 		ServiceCard: cardNumber,
 		Revenue:     float64(paymentSum - actualPrice),
 		IsDone:      false,
-		DoneKey:     uuid.NewString(),
+		DoneKey:     "wallet_" + uuid.NewString(),
 		CreatedAt:   time.Time{},
 		UpdatedAt:   time.Time{},
 	}
@@ -453,17 +481,202 @@ func (a *CalculateWalletBuyOrder) Run(
 	return nil
 }
 
-type NotifyWalletBuyOrder struct {
+type CalculateWalletSellOrder struct {
+	WalletOrderRepository *models.WalletOrderRepository
+	WalletRepository      *models.WalletRepository
+}
+
+func (a *CalculateWalletSellOrder) GetName() string {
+	return "calculate_wallet_sell_order"
+}
+
+func (a *CalculateWalletSellOrder) Run(
+	p runtime.ChatProvider,
+	t runtime.TokenProxy,
+	s *runtime.State,
+	prev *runtime.State,
+	c runtime.Command,
+) runtime.ActionError {
+	extras := t.GetExtras()
+	sellAmount, err := strconv.ParseFloat(extras["wallet_order_sell_amount"], 64)
+	if err != nil {
+		fmt.Println("error: " + err.Error())
+		return &runtime.GenericActionError{InnerError: err}
+	}
+
+	paymentSum, actualPrice, err := ConvertCrypto(extras["wallet_order_currency"], "RUB", sellAmount, false)
+	if err != nil {
+		fmt.Println("error: " + err.Error())
+		return &runtime.GenericActionError{InnerError: err}
+	}
+
+	orderNumber := uuid.New().String()
+	wallet := a.WalletRepository.FindWalletByTokenId(t.GetId())
+
+	order := &models.WalletOrder{
+		Model:      gorm.Model{},
+		TokenID:    int(t.GetId()),
+		WalletID:   int(wallet.ID),
+		Key:        orderNumber,
+		Type:       extras["wallet_order_type"],
+		Currency:   extras["wallet_order_currency"],
+		SellAmount: sellAmount,
+		PaymentSum: float64(paymentSum),
+		ClientCard: extras["wallet_order_client_card"],
+		Revenue:    float64(actualPrice - paymentSum),
+		IsDone:     false,
+		DoneKey:    "wallet_" + uuid.NewString(),
+		CreatedAt:  time.Time{},
+		UpdatedAt:  time.Time{},
+	}
+
+	a.WalletOrderRepository.Persist(order)
+	extras["wallet_order_payment_sum"] = fmt.Sprintf("%d", paymentSum)
+	extras["wallet_last_order_key"] = orderNumber
+	t.SetExtras(extras)
+
+	return nil
+}
+
+type CalculateWalletExchangeOrder struct {
+	WalletOrderRepository *models.WalletOrderRepository
+	WalletRepository      *models.WalletRepository
+}
+
+func (a *CalculateWalletExchangeOrder) GetName() string {
+	return "calculate_wallet_exchange_order"
+}
+
+func (a *CalculateWalletExchangeOrder) Run(
+	p runtime.ChatProvider,
+	t runtime.TokenProxy,
+	s *runtime.State,
+	prev *runtime.State,
+	c runtime.Command,
+) runtime.ActionError {
+	extras := t.GetExtras()
+	exchangeAmount, err := strconv.ParseFloat(extras["wallet_order_exchange_amount"], 64)
+
+	if err != nil {
+		fmt.Println("error: " + err.Error())
+		return &runtime.GenericActionError{InnerError: err}
+	}
+
+	if err != nil {
+		fmt.Println("error: " + err.Error())
+		return &runtime.GenericActionError{InnerError: err}
+	}
+
+	orderNumber := uuid.New().String()
+	wallet := a.WalletRepository.FindWalletByTokenId(t.GetId())
+
+	order := &models.WalletOrder{
+		Model:           gorm.Model{},
+		TokenID:         int(t.GetId()),
+		WalletID:        int(wallet.ID),
+		Key:             orderNumber,
+		Type:            extras["wallet_order_type"],
+		Currency:        extras["wallet_order_currency"],
+		ExchangeAmount:  exchangeAmount,
+		ExchangeAddress: extras["wallet_order_exchange_address"],
+		Revenue:         0,
+		IsDone:          false,
+		DoneKey:         "wallet_" + uuid.NewString(),
+		CreatedAt:       time.Time{},
+		UpdatedAt:       time.Time{},
+	}
+
+	a.WalletOrderRepository.Persist(order)
+	extras["wallet_last_order_key"] = orderNumber
+	t.SetExtras(extras)
+
+	return nil
+}
+
+type ConfirmOrder struct {
+	WalletRepository      *models.WalletRepository
+	WalletOrderRepository *models.WalletOrderRepository
+	OrderRepository       *models.OrderRepository
+}
+
+func (a *ConfirmOrder) GetName() string {
+	return "confirm_order"
+}
+
+func (a *ConfirmOrder) Run(
+	p runtime.ChatProvider,
+	t runtime.TokenProxy,
+	s *runtime.State,
+	prev *runtime.State,
+	c runtime.Command,
+) runtime.ActionError {
+	input := c.GetInput()
+
+	if input[0] == 'm' { // market_ prefix
+		order := a.OrderRepository.FindByDoneKey(c.GetInput())
+		order.IsDone = true
+		a.OrderRepository.Persist(order)
+	} else { // wallet_ prefix
+		walletOrder := a.WalletOrderRepository.FindByDoneKey(c.GetInput())
+
+		if walletOrder == nil {
+			panic("WALLET ORDER NOT FOUND!!!")
+		}
+
+		walletOrder.IsDone = true
+		a.WalletOrderRepository.Persist(walletOrder)
+
+		wallet := a.WalletRepository.FindById(uint(walletOrder.WalletID))
+
+		if walletOrder.Type == "Купить" {
+			if walletOrder.Currency == "BTC" {
+				wallet.BalanceBTC += walletOrder.BuyAmount
+			} else if walletOrder.Currency == "ETH" {
+				wallet.BalanceETH += walletOrder.BuyAmount
+			} else if walletOrder.Currency == "BNB" {
+				wallet.BalanceBNB += walletOrder.BuyAmount
+			} else if walletOrder.Currency == "USDT" {
+				wallet.BalanceUSDT += walletOrder.BuyAmount
+			}
+		} else if walletOrder.Type == "Продать" {
+			if walletOrder.Currency == "BTC" {
+				wallet.BalanceBTC -= walletOrder.BuyAmount
+			} else if walletOrder.Currency == "ETH" {
+				wallet.BalanceETH -= walletOrder.BuyAmount
+			} else if walletOrder.Currency == "BNB" {
+				wallet.BalanceBNB -= walletOrder.BuyAmount
+			} else if walletOrder.Currency == "USDT" {
+				wallet.BalanceUSDT -= walletOrder.BuyAmount
+			}
+		} else {
+			if walletOrder.Currency == "BTC" {
+				wallet.BalanceBTC -= walletOrder.ExchangeAmount
+			} else if walletOrder.Currency == "ETH" {
+				wallet.BalanceETH -= walletOrder.ExchangeAmount
+			} else if walletOrder.Currency == "BNB" {
+				wallet.BalanceBNB -= walletOrder.ExchangeAmount
+			} else if walletOrder.Currency == "USDT" {
+				wallet.BalanceUSDT -= walletOrder.ExchangeAmount
+			}
+		}
+
+		a.WalletRepository.Persist(wallet)
+	}
+
+	return nil
+}
+
+type NotifyWalletOrder struct {
 	WalletOrderRepository *models.WalletOrderRepository
 	WalletRepository      *models.WalletRepository
 	SettingsRepository    *models.SettingsRepository
 }
 
-func (a *NotifyWalletBuyOrder) GetName() string {
-	return "notify_wallet_buy_order"
+func (a *NotifyWalletOrder) GetName() string {
+	return "notify_wallet_order"
 }
 
-func (a *NotifyWalletBuyOrder) Run(
+func (a *NotifyWalletOrder) Run(
 	p runtime.ChatProvider,
 	t runtime.TokenProxy,
 	s *runtime.State,
@@ -477,14 +690,48 @@ func (a *NotifyWalletBuyOrder) Run(
 	settings := a.SettingsRepository.FindByScenarioName(p.GetScenarioName())
 
 	if walletOrder.Type == "Купить" {
-		fmt.Println("send notification about wallet buy")
 		text := fmt.Sprintf(
-			"Покупка на кошелек бота, новый заказ %s: покупка %f %s за %d руб., карта на которую пользователь отправит деньги - %s, код завершения сделки - %s",
+			"Кошелек: новый заказ %s: покупка %f %s за %d руб., карта на которую пользователь отправит деньги - %s, код завершения сделки - %s",
 			walletOrder.Key,
 			walletOrder.BuyAmount,
 			walletOrder.Currency,
 			int(walletOrder.PaymentSum),
 			walletOrder.ServiceCard,
+			walletOrder.DoneKey,
+		)
+
+		if settings != nil {
+			for _, id := range settings.GetTelegramAdminsIds() {
+				for _, botToken := range settings.GetTelegramNotificationChannelsTokens() {
+					NotifyAdmins(text, id, botToken)
+				}
+			}
+		}
+	} else if walletOrder.Type == "Продать" {
+		text := fmt.Sprintf(
+			"Кошелёк: новый заказ %s: продажа %f %s за %d руб., карта на которую пользователь получит деньги - %s, код завершения сделки - %s",
+			walletOrder.Key,
+			walletOrder.SellAmount,
+			walletOrder.Currency,
+			int(walletOrder.PaymentSum),
+			walletOrder.ClientCard,
+			walletOrder.DoneKey,
+		)
+
+		if settings != nil {
+			for _, id := range settings.GetTelegramAdminsIds() {
+				for _, botToken := range settings.GetTelegramNotificationChannelsTokens() {
+					NotifyAdmins(text, id, botToken)
+				}
+			}
+		}
+	} else if walletOrder.Type == "Перевод" {
+		text := fmt.Sprintf(
+			"Кошелёк: новый заказ %s: перевод %f %s, адрес кошелька перевода - %s, код завершения сделки - %s",
+			walletOrder.Key,
+			walletOrder.ExchangeAmount,
+			walletOrder.Currency,
+			walletOrder.ExchangeAddress,
 			walletOrder.DoneKey,
 		)
 
@@ -503,7 +750,7 @@ func (a *NotifyWalletBuyOrder) Run(
 }
 
 func NotifyAdmins(text string, chatId int, botToken string) {
-	url := "https://api.telegram.org/bot1799138792:AAGryx8c1D48yT8TAD5VCG1yzXs8k3tPtIc/sendMessage"
+	url := "https://api.telegram.org/bot" + botToken + "/sendMessage"
 
 	reqBody := &runtime.TelegramOutgoingMessage{
 		ChatID:    uint(chatId),

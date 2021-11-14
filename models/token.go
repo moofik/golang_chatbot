@@ -3,6 +3,7 @@ package models
 import (
 	"bot-daedalus/bot/runtime"
 	"encoding/json"
+	"fmt"
 	"gorm.io/gorm"
 )
 
@@ -120,6 +121,9 @@ func (tf TokenFactory) GetOrCreate(p runtime.ChatProvider) runtime.TokenProxy {
 					Extras:       "{}",
 				}
 			}
+		} else {
+			fmt.Println("чТО ТО ИНТЕРЕСНОЕ БЛЯТЬ")
+			panic(msg)
 		}
 
 		return token

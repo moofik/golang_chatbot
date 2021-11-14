@@ -13,7 +13,7 @@ func TestNext(t *testing.T) {
 
 	ts.Add(&UserInputCommand{
 		Text: "1",
-		Metadata: &Metadata{
+		Metadata: &CommandMetadata{
 			Cmd:        "1",
 			Place:      "1",
 			Uniqueness: "1",
@@ -26,7 +26,7 @@ func TestNext(t *testing.T) {
 
 	ts.Add(&UserInputCommand{
 		Text: "2",
-		Metadata: &Metadata{
+		Metadata: &CommandMetadata{
 			Cmd:        "2",
 			Place:      "2",
 			Uniqueness: "2",
@@ -39,7 +39,7 @@ func TestNext(t *testing.T) {
 
 	ts.Add(&UserInputCommand{
 		Text: "3",
-		Metadata: &Metadata{
+		Metadata: &CommandMetadata{
 			Cmd:        "3",
 			Place:      "3",
 			Uniqueness: "3",

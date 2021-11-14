@@ -16,6 +16,10 @@ type Scenario struct {
 }
 
 func (s *Scenario) GetCurrentState(token TokenProxy) *State {
+	if token == nil {
+		panic("TOKEN IS NIL!!! ЗАДУМАЙСЯ УЕБОК")
+	}
+
 	marking, err := s.Workflow.GetMarking(token)
 
 	if err != nil {
@@ -44,18 +48,16 @@ func (s *Scenario) HandleCommand(cmd Command, currentState *State, token TokenPr
 	var err error
 
 	if cmd.GetType() == TYPE_TEXT_INPUT {
-		var transitions []*petrinet.Transition
 		var commands []Command
-		transitions, err = currentState.GetTransitionListByUniqueness(cmd)
-		//finding valid transitions
-		commands, err = currentState.GetCommandListByUniqueness(cmd)
-
+		commands, err = currentState.GetCommandListByProto(cmd)
+		fmt.Println("COMMANDS RETRIEVED:")
+		for _, command := range commands {
+			fmt.Println(command.Debug())
+		}
+		fmt.Println("END CR")
 		for _, c := range commands {
-			for _, t := range transitions {
-				if c.Pass(s.Provider, token, t) {
-					actualTransition = t
-					break
-				}
+			if ok, _ := c.Pass(s.Provider, cmd, token); ok {
+				actualTransition, _ = currentState.GetTransitionByUniqueness(c)
 			}
 
 			if actualTransition != nil {
@@ -77,7 +79,7 @@ func (s *Scenario) HandleCommand(cmd Command, currentState *State, token TokenPr
 			State: currentState,
 			Command: &UserInputCommand{
 				Text: "",
-				Metadata: &Metadata{
+				Metadata: &CommandMetadata{
 					Cmd:   "/system",
 					Place: "noplace",
 				},
@@ -118,7 +120,7 @@ func (s *Scenario) HandleCommand(cmd Command, currentState *State, token TokenPr
 	}
 
 	if newState != nil {
-		newCmd, _ := newState.GetCommandByProto(&InstantTransitionCommand{Metadata: &Metadata{
+		newCmd, _ := newState.GetCommandByProto(&InstantTransitionCommand{Metadata: &CommandMetadata{
 			Cmd:        "instant",
 			Place:      "",
 			Uniqueness: "",
@@ -134,6 +136,7 @@ func (s *Scenario) HandleCommand(cmd Command, currentState *State, token TokenPr
 
 type ScenarioBuilder struct {
 	ActionRegistry   func(string, map[string]string) Action
+	CommandRegistry  func(string, string, []interface{}) Command
 	Repository       DelayedTransitionRepository
 	Provider         ChatProvider
 	states           map[string]*State
@@ -324,7 +327,7 @@ func (b *ScenarioBuilder) walkTransitions(v reflect.Value) *TransitionStorage {
 				}
 
 				if cmdType != "" {
-					newCmd := CreateCommand(cmdType, b.currentPlaceName, arguments)
+					newCmd := CreateCommand(cmdType, b.currentPlaceName, arguments, b.CommandRegistry)
 					commands = append(commands, newCmd)
 				}
 			}
@@ -336,6 +339,7 @@ func (b *ScenarioBuilder) walkTransitions(v reflect.Value) *TransitionStorage {
 				From: []string{b.currentPlaceName},
 				To:   []string{stateTo},
 			}
+
 			for _, c := range commands {
 				ts.Add(c, t)
 			}

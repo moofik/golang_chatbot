@@ -31,6 +31,9 @@ services:
       - "traefik.http.routers.traefik-router.tls.certresolver=letsencrypt"
     networks:
       - crypto
+    depends_on:
+      - db
+      - traefik
 
   db:
     build: postgres

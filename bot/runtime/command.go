@@ -1,7 +1,6 @@
 package runtime
 
 import (
-	"bot-daedalus/petrinet"
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
@@ -12,7 +11,7 @@ const TYPE_BUTTON = "button"
 const TYPE_INSTANT = "instant"
 const TYPE_VALIDATE = "validate"
 
-type Metadata struct {
+type CommandMetadata struct {
 	Cmd        string
 	Place      string
 	Uniqueness string
@@ -23,10 +22,10 @@ type Command interface {
 	ToProtoHash() string
 	ToUniquenessHash() string
 	Debug() string
-	GetMetadata() *Metadata
+	GetMetadata() *CommandMetadata
 	GetInput() string
 	GetCaption() string
-	Pass(p ChatProvider, t TokenProxy, tr *petrinet.Transition) bool
+	Pass(p ChatProvider, initCmd Command, t TokenProxy) (bool, error)
 	GetType() string
 }
 
@@ -37,7 +36,7 @@ type ForceCommand interface {
 
 //
 type InstantTransitionCommand struct {
-	Metadata *Metadata
+	Metadata *CommandMetadata
 }
 
 func (c *InstantTransitionCommand) ToHash() string {
@@ -52,7 +51,7 @@ func (c *InstantTransitionCommand) Debug() string {
 	return fmt.Sprintf("cmd: %s, state name: %s, hash: %s", c.Metadata.Cmd, c.Metadata.Place, c.ToHash())
 }
 
-func (c *InstantTransitionCommand) GetMetadata() *Metadata {
+func (c *InstantTransitionCommand) GetMetadata() *CommandMetadata {
 	return c.Metadata
 }
 
@@ -68,8 +67,8 @@ func (c *InstantTransitionCommand) ToUniquenessHash() string {
 	return ToUniquenessHash(c.Metadata)
 }
 
-func (c *InstantTransitionCommand) Pass(p ChatProvider, t TokenProxy, tr *petrinet.Transition) bool {
-	return true
+func (c *InstantTransitionCommand) Pass(p ChatProvider, initCmd Command, t TokenProxy) (bool, error) {
+	return true, nil
 }
 
 func (c *InstantTransitionCommand) GetType() string {
@@ -79,7 +78,7 @@ func (c *InstantTransitionCommand) GetType() string {
 //
 type UserInputCommand struct {
 	Text     string
-	Metadata *Metadata
+	Metadata *CommandMetadata
 }
 
 func (c *UserInputCommand) ToUniquenessHash() string {
@@ -98,7 +97,7 @@ func (c *UserInputCommand) Debug() string {
 	return fmt.Sprintf("cmd: %s, state name: %s, text: %s, hash: %s, data: %s", c.Metadata.Cmd, c.Metadata.Place, c.Text, c.ToHash(), c.GetInput())
 }
 
-func (c *UserInputCommand) GetMetadata() *Metadata {
+func (c *UserInputCommand) GetMetadata() *CommandMetadata {
 	return c.Metadata
 }
 
@@ -110,8 +109,8 @@ func (c *UserInputCommand) GetCaption() string {
 	return "user_text_command"
 }
 
-func (c *UserInputCommand) Pass(p ChatProvider, t TokenProxy, tr *petrinet.Transition) bool {
-	return true
+func (c *UserInputCommand) Pass(p ChatProvider, initCmd Command, t TokenProxy) (bool, error) {
+	return true, nil
 }
 
 func (c *UserInputCommand) GetType() string {
@@ -122,7 +121,7 @@ func (c *UserInputCommand) GetType() string {
 type ButtonPressedCommand struct {
 	ButtonCommand string
 	ButtonText    string
-	Metadata      *Metadata
+	Metadata      *CommandMetadata
 }
 
 func (c *ButtonPressedCommand) ToUniquenessHash() string {
@@ -141,7 +140,7 @@ func (c *ButtonPressedCommand) Debug() string {
 	return fmt.Sprintf("cmd: %s, state name: %s, button cmd: %s, button text: %s, hash: %s", c.Metadata.Cmd, c.Metadata.Place, c.ButtonCommand, c.ButtonText, c.ToHash())
 }
 
-func (c *ButtonPressedCommand) GetMetadata() *Metadata {
+func (c *ButtonPressedCommand) GetMetadata() *CommandMetadata {
 	return c.Metadata
 }
 
@@ -157,12 +156,12 @@ func (c *ButtonPressedCommand) GetType() string {
 	return "button"
 }
 
-func (c *ButtonPressedCommand) Pass(p ChatProvider, t TokenProxy, tr *petrinet.Transition) bool {
-	return true
+func (c *ButtonPressedCommand) Pass(p ChatProvider, initCmd Command, t TokenProxy) (bool, error) {
+	return true, nil
 }
 
 //
-func CreateCommand(cmd string, place string, arguments []interface{}) Command {
+func CreateCommand(cmd string, place string, arguments []interface{}, commandRegistry func(string, string, []interface{}) Command) Command {
 	if cmd == "text_input" {
 		text := ""
 
@@ -172,7 +171,7 @@ func CreateCommand(cmd string, place string, arguments []interface{}) Command {
 
 		return &UserInputCommand{
 			Text:     text,
-			Metadata: &Metadata{Cmd: cmd, Place: place},
+			Metadata: &CommandMetadata{Cmd: cmd, Place: place},
 		}
 	}
 
@@ -191,32 +190,36 @@ func CreateCommand(cmd string, place string, arguments []interface{}) Command {
 		return &ButtonPressedCommand{
 			ButtonCommand: buttonCommand,
 			ButtonText:    buttonText,
-			Metadata:      &Metadata{Cmd: cmd, Place: place, Uniqueness: buttonCommand},
+			Metadata:      &CommandMetadata{Cmd: cmd, Place: place, Uniqueness: buttonCommand},
 		}
 	}
 
 	if cmd == "instant" {
-		return &InstantTransitionCommand{Metadata: &Metadata{
+		return &InstantTransitionCommand{Metadata: &CommandMetadata{
 			Cmd:        cmd,
 			Place:      place,
 			Uniqueness: "",
 		}}
 	}
 
+	if commandRegistry != nil {
+		return commandRegistry(cmd, place, arguments)
+	}
+
 	return nil
 }
 
-func ToHash(metadata *Metadata) string {
+func ToHash(metadata *CommandMetadata) string {
 	hash := md5.Sum([]byte(metadata.Cmd + metadata.Place + metadata.Uniqueness))
 	return hex.EncodeToString(hash[:])
 }
 
-func ToProtoHash(metadata *Metadata) string {
+func ToProtoHash(metadata *CommandMetadata) string {
 	hash := md5.Sum([]byte(metadata.Cmd))
 	return hex.EncodeToString(hash[:])
 }
 
-func ToUniquenessHash(metadata *Metadata) string {
+func ToUniquenessHash(metadata *CommandMetadata) string {
 	hash := md5.Sum([]byte(metadata.Uniqueness))
 	return hex.EncodeToString(hash[:])
 }

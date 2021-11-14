@@ -37,3 +37,12 @@ func (r *WalletRepository) FindWalletByTokenId(tokenId uint) *Wallet {
 	}
 	return &wallet
 }
+
+func (r *WalletRepository) FindById(id uint) *Wallet {
+	var wallet Wallet
+	res := r.DB.First(&wallet, "id = ?", id)
+	if res.Error != nil {
+		return nil
+	}
+	return &wallet
+}
