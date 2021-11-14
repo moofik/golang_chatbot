@@ -355,7 +355,7 @@ func (a *ShowWallet) Run(
 	prev *runtime.State,
 	c runtime.Command,
 ) runtime.ActionError {
-	text := "<b>- BTC</b>: {{.btc}} \n\n<b>- ETH</b>: {{.eth}} \n\n<b>- BNB</b>: {{.bnb}} \n\n<b>- USDT</b>: {{.usdt}}"
+	text := "<b>- BTC</b>: {{.btc}}  ~  {{.btc_rub}} руб. \n\n<b>- ETH</b>: {{.eth}}  ~  {{.eth_rub}} руб. \n\n<b>- BNB</b>: {{.bnb}}  ~  {{.bnb_rub}} руб. \n\n<b>- USDT</b>: {{.usdt}}  ~  {{.usdt_rub}} руб."
 	tmpl, err := template.New("test").Parse(text)
 	if err != nil {
 		return &runtime.GenericActionError{InnerError: err}
@@ -363,11 +363,20 @@ func (a *ShowWallet) Run(
 
 	var tpl bytes.Buffer
 	wallet := a.WalletRepository.FindWalletByTokenId(t.GetId())
-	data := map[string]float64{
-		"btc":  wallet.BalanceBTC,
-		"eth":  wallet.BalanceETH,
-		"bnb":  wallet.BalanceBNB,
-		"usdt": wallet.BalanceUSDT,
+	_, BTCinRUB, _ := ConvertCrypto("BTC", "RUB", wallet.BalanceBTC, false)
+	_, ETHinRUB, _ := ConvertCrypto("ETH", "RUB", wallet.BalanceETH, false)
+	_, BNBinRUB, _ := ConvertCrypto("BNB", "RUB", wallet.BalanceBNB, false)
+	_, USDTinRUB, _ := ConvertCrypto("USDT", "RUB", wallet.BalanceUSDT, false)
+
+	data := map[string]string{
+		"btc":      fmt.Sprintf("%f", wallet.BalanceBTC),
+		"eth":      fmt.Sprintf("%f", wallet.BalanceETH),
+		"bnb":      fmt.Sprintf("%f", wallet.BalanceBNB),
+		"usdt":     fmt.Sprintf("%f", wallet.BalanceUSDT),
+		"btc_rub":  fmt.Sprintf("%d", BTCinRUB),
+		"eth_rub":  fmt.Sprintf("%d", ETHinRUB),
+		"bnb_rub":  fmt.Sprintf("%d", BNBinRUB),
+		"usdt_rub": fmt.Sprintf("%d", USDTinRUB),
 	}
 
 	if err := tmpl.Execute(&tpl, data); err != nil {
