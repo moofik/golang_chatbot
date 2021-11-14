@@ -17,7 +17,7 @@ scenario:
           name: send_text
           params:
             text: >
-              Привет! Я помогу вам продать или купить криптовалюту. А еще у нас есть кошелёк, где ты сможешь безопасно хранить свои средства :)
+              Привет! Я помогу вам продать или купить криптовалюту. А еще у нас есть кошелёк, где вы сможете безопасно хранить свои средства :)
               Я уже зарегестрировал ваш аккаунт в системе, чтобы воспользоваться ботом переходите в главное меню.
       transitions:
         - {name: to_main_menu, state_to: main_menu, command: {type: 'button', arguments: ['/back', 'Перейти в меню']}}
@@ -33,7 +33,7 @@ scenario:
           name: send_text
           params:
             text: >
-              Вы находитесь в главном меню системы.
+              Вы находитесь в главном меню бота.
               Маркет - позволит вам продавать и покупать валюту, используя любые сторонние кошельки для криптовалют и переводы на карту.
               Кошелек - ваш кошелек на нашей платформе, с его помощью вы можете с лёгкостью покупать, переводить, продавать, а так же хранить средства 😉
               В обоих случаях мы выступаем гарантом сделок.
@@ -71,7 +71,7 @@ scenario:
         - {name: to_market_buy_2_2, state_to: market_buy_2, command: {type: 'button', arguments: ['/market_buy_eth', 'ETH']}}
         - {name: to_market_buy_2_3, state_to: market_buy_2, command: {type: 'button', arguments: ['/market_buy_usdt', 'USDT']}}
         - {name: to_market_buy_2_4, state_to: market_buy_2, command: {type: 'button', arguments: ['/market_buy_bnb', 'BNB']}}
-        - {name: to_main_menu_mbc_1, state_to: main_menu, command: {type: 'button', arguments: ['/market_buy_cancel', 'Отмена ❌']}}
+        - {name: to_main_menu_mbc_1, state_to: main_menu, command: {type: 'button', arguments: ['/market_buy_xcancel', 'Отмена ❌']}}
 
     -
       name: market_buy_2
@@ -128,7 +128,7 @@ scenario:
               Остался последний шаг. Отправьте {{.market_order_payment_sum}} руб. на карту {{.market_order_service_card}}. После завершения, нажмите "Отправлено"
       transitions:
         - {name: to_market_buy_5, state_to: market_buy_5, command: {type: 'button', arguments: ['/market_buy_5', 'Отправлено']}}
-        - {name: to_main_menu_mbc_2, state_to: main_menu, command: {type: 'button', arguments: ['/market_buy_cancel_2', 'Отмена ❌']}}
+        - {name: to_main_menu_mbc_2, state_to: main_menu, command: {type: 'button', arguments: ['/market_buy_xcancel_2', 'Отмена ❌']}}
 
     -
       name: market_buy_5
@@ -156,9 +156,10 @@ scenario:
               Теперь выберите крипитовалюту, которую требуется продать.
       transitions:
         - {name: to_market_sell_2, state_to: market_sell_2, command: {type: 'button', arguments: ['/market_sell_btc', 'BTC']}}
+        - {name: to_market_sell_2_1, state_to: market_sell_2, command: {type: 'button', arguments: ['/market_sell_bnb', 'BNB']}}
         - {name: to_market_sell_2_2, state_to: market_sell_2, command: {type: 'button', arguments: ['/market_sell_eth', 'ETH']}}
         - {name: to_market_sell_2_3, state_to: market_sell_2, command: {type: 'button', arguments: ['/market_sell_usdt', 'USDT']}}
-        - {name: to_main_menu_msc_1, state_to: main_menu, command: {type: 'button', arguments: ['/market_buy_cancel_3', 'Отмена ❌']}}
+        - {name: to_main_menu_msc_1, state_to: main_menu, command: {type: 'button', arguments: ['/market_buy_xcancel_3', 'Отмена ❌']}}
 
     -
       name: market_sell_2
@@ -405,7 +406,7 @@ scenario:
           name: send_text
           params:
             text: >
-              Цена продажи:
+              Цена продажи: {{.wallet_order_payment_sum}} руб.
               Для продолжения вам необходимо подтвердить сделку. Отменить действие будет нельзя.
       transitions:
         - {name: to_ws_9, state_to: wallet_sell_9, command: {type: 'button', arguments: ['/to_ws_9', 'Подтверждаю продажу']}}

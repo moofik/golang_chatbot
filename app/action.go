@@ -640,13 +640,13 @@ func (a *ConfirmOrder) Run(
 			}
 		} else if walletOrder.Type == "Продать" {
 			if walletOrder.Currency == "BTC" {
-				wallet.BalanceBTC -= walletOrder.BuyAmount
+				wallet.BalanceBTC -= walletOrder.SellAmount
 			} else if walletOrder.Currency == "ETH" {
-				wallet.BalanceETH -= walletOrder.BuyAmount
+				wallet.BalanceETH -= walletOrder.SellAmount
 			} else if walletOrder.Currency == "BNB" {
-				wallet.BalanceBNB -= walletOrder.BuyAmount
+				wallet.BalanceBNB -= walletOrder.SellAmount
 			} else if walletOrder.Currency == "USDT" {
-				wallet.BalanceUSDT -= walletOrder.BuyAmount
+				wallet.BalanceUSDT -= walletOrder.SellAmount
 			}
 		} else {
 			if walletOrder.Currency == "BTC" {
