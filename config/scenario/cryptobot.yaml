@@ -2,7 +2,7 @@ scenario:
   name: cryptobot
   provider:
     name: telegram
-    token: '1799138792:AAGryx8c1D48yT8TAD5VCG1yzXs8k3tPtIc'
+    token: '2117926131:AAF7tpRWkO1a4qhdjorbGCdfAHAfs8jCV7o'
 
   states:
     -
