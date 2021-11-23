@@ -160,6 +160,48 @@ func (c *ButtonPressedCommand) Pass(p ChatProvider, initCmd Command, t TokenProx
 	return true, nil
 }
 
+type RecognizeInputCommand struct {
+	Text     string
+	Metadata *CommandMetadata
+	Marker   string
+}
+
+func (c *RecognizeInputCommand) ToUniquenessHash() string {
+	return ToUniquenessHash(c.Metadata)
+}
+
+func (c *RecognizeInputCommand) ToHash() string {
+	return ToHash(c.Metadata)
+}
+
+func (c *RecognizeInputCommand) ToProtoHash() string {
+	return ToProtoHash(c.Metadata)
+}
+
+func (c *RecognizeInputCommand) Debug() string {
+	return fmt.Sprintf("cmd: %s, state name: %s, text: %s, hash: %s, data: %s", c.Metadata.Cmd, c.Metadata.Place, c.Text, c.ToHash(), c.GetInput())
+}
+
+func (c *RecognizeInputCommand) GetMetadata() *CommandMetadata {
+	return c.Metadata
+}
+
+func (c *RecognizeInputCommand) GetInput() string {
+	return c.Text
+}
+
+func (c *RecognizeInputCommand) GetCaption() string {
+	return "recognize_input"
+}
+
+func (c *RecognizeInputCommand) Pass(p ChatProvider, initCmd Command, t TokenProxy) (bool, error) {
+	return c.Marker == initCmd.GetInput(), nil
+}
+
+func (c *RecognizeInputCommand) GetType() string {
+	return "recognize_input"
+}
+
 //
 func CreateCommand(cmd string, place string, arguments []interface{}, commandRegistry func(string, string, []interface{}) Command) Command {
 	if cmd == "text_input" {
@@ -200,6 +242,19 @@ func CreateCommand(cmd string, place string, arguments []interface{}, commandReg
 			Place:      place,
 			Uniqueness: "",
 		}}
+	}
+
+	if cmd == "recognize_input" {
+		marker := ""
+
+		if len(arguments) > 0 {
+			marker = arguments[0].(string)
+		}
+
+		return &RecognizeInputCommand{
+			Marker:   marker,
+			Metadata: &CommandMetadata{Cmd: "text_input", Place: place, Uniqueness: marker},
+		}
 	}
 
 	if commandRegistry != nil {

@@ -46,6 +46,7 @@ func (s *Scenario) HandleCommand(cmd Command, currentState *State, token TokenPr
 
 	var actualTransition *petrinet.Transition
 	var err error
+	var lastOrderCommand Command
 
 	if cmd.GetType() == TYPE_TEXT_INPUT {
 		var commands []Command
@@ -55,7 +56,13 @@ func (s *Scenario) HandleCommand(cmd Command, currentState *State, token TokenPr
 			fmt.Println(command.Debug())
 		}
 		fmt.Println("END CR")
+
 		for _, c := range commands {
+			if c.GetType() == TYPE_TEXT_INPUT {
+				lastOrderCommand = c
+				continue
+			}
+
 			if ok, _ := c.Pass(s.Provider, cmd, token); ok {
 				actualTransition, _ = currentState.GetTransitionByUniqueness(c)
 			}
@@ -69,8 +76,13 @@ func (s *Scenario) HandleCommand(cmd Command, currentState *State, token TokenPr
 	}
 
 	if actualTransition == nil {
-		fmt.Println("actual transition not found")
-		return token
+		if lastOrderCommand != nil {
+			fmt.Println("last order cmd found")
+			actualTransition, err = currentState.GetTransition(lastOrderCommand)
+		} else {
+			fmt.Println("actual transition not found")
+			return token
+		}
 	}
 
 	if err != nil {

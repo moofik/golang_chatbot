@@ -2,7 +2,7 @@ scenario:
   name: cryptobot
   provider:
     name: telegram
-    token: '2117926131:AAF7tpRWkO1a4qhdjorbGCdfAHAfs8jCV7o'
+    token: '1799138792:AAGryx8c1D48yT8TAD5VCG1yzXs8k3tPtIc' #'2117926131:AAF7tpRWkO1a4qhdjorbGCdfAHAfs8jCV7o'
 
   states:
     -
@@ -27,8 +27,6 @@ scenario:
       actions:
         create_wallet:
           name: create_wallet
-        cancel_order_data:
-          name: cancel_order_data
         send_text:
           name: send_text
           params:
@@ -38,12 +36,14 @@ scenario:
               Кошелек - ваш кошелек на нашей платформе, с его помощью вы можете с лёгкостью покупать, переводить, продавать, а так же хранить средства 😉
               В обоих случаях мы выступаем гарантом сделок.
       transitions:
-        - {name: to_market, state_to: market, command: {type: 'button', arguments: ['/market', 'Маркет']}}
-        - {name: to_wallet, state_to: wallet, command: {type: 'button', arguments: ['/wallet', 'Кошелек']}}
+        - { name: to_market_ri, state_to: market, command: { type: 'recognize_input', arguments: [ 'Маркет' ] } }
+        - { name: to_wallet_ri, state_to: wallet, command: { type: 'recognize_input', arguments: [ 'Кошелек' ] } }
 
     -
       name: market
       actions:
+        cancel_order_data:
+          name: cancel_order_data
         send_text:
           name: send_text
           params:
@@ -54,7 +54,8 @@ scenario:
         - {name: to_market_buy, state_to: market_buy, command: {type: 'button', arguments: ['/market_buy', 'Купить']}}
         - {name: to_market_sell, state_to: market_sell, command: {type: 'button', arguments: ['/market_sell', 'Продать']}}
         - {name: to_main_menu_from_market, state_to: main_menu, command: {type: 'button', arguments: ['/market_to_main_menu', 'В главное меню']}}
-
+        - { name: to_market_ri, state_to: market, command: { type: 'recognize_input', arguments: [ 'Маркет' ] } }
+        - { name: to_wallet_ri, state_to: wallet, command: { type: 'recognize_input', arguments: [ 'Кошелек' ] } }
     -
       name: market_buy
       actions:
@@ -72,7 +73,8 @@ scenario:
         - {name: to_market_buy_2_3, state_to: market_buy_2, command: {type: 'button', arguments: ['/market_buy_usdt', 'USDT']}}
         - {name: to_market_buy_2_4, state_to: market_buy_2, command: {type: 'button', arguments: ['/market_buy_bnb', 'BNB']}}
         - {name: to_main_menu_mbc_1, state_to: main_menu, command: {type: 'button', arguments: ['/market_buy_xcancel', 'Отмена ❌']}}
-
+        - { name: to_market_ri, state_to: market, command: { type: 'recognize_input', arguments: [ 'Маркет' ] } }
+        - { name: to_wallet_ri, state_to: wallet, command: { type: 'recognize_input', arguments: [ 'Кошелек' ] } }
     -
       name: market_buy_2
       actions:
@@ -86,6 +88,8 @@ scenario:
               Введите сумму в {{.market_order_currency}}, которую требуется приобрести
       transitions:
         - { name: to_market_buy_3, state_to: market_buy_3, command: { type: 'text_input' } }
+        - { name: to_market_ri, state_to: market, command: { type: 'recognize_input', arguments: [ 'Маркет' ] } }
+        - { name: to_wallet_ri, state_to: wallet, command: { type: 'recognize_input', arguments: [ 'Кошелек' ] } }
 
     -
       name: market_buy_3
@@ -235,6 +239,8 @@ scenario:
     -
       name: wallet
       actions:
+        cancel_order_data:
+          name: cancel_order_data
         show_wallet:
           name: show_wallet
       transitions:
