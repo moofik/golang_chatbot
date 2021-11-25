@@ -70,21 +70,14 @@ func (c *ValidateWalletOrderCommand) GetCaption() string {
 }
 
 func (c *ValidateWalletOrderCommand) Pass(p runtime.ChatProvider, initCmd runtime.Command, t runtime.TokenProxy) (bool, error) {
-	fmt.Println("JEEEEEEEEH)))")
 	wallet := c.WalletRepository.FindWalletByTokenId(t.GetId())
 	extras := t.GetExtras()
 	var actualValidity bool
 	requestedAmount, err := strconv.ParseFloat(initCmd.GetInput(), 64)
 
 	if err != nil {
-		fmt.Println("error converting amt")
 		return false, err
 	}
-
-	fmt.Println("ct amt : " + string(extras["wallet_order_currency"]))
-	s := fmt.Sprintf("%f", requestedAmount)
-	fmt.Println("rq amt : " + s)
-	fmt.Println("wallet" + fmt.Sprintf("%d", wallet.ID))
 
 	if extras["wallet_order_currency"] == "BTC" {
 		actualValidity = wallet.BalanceBTC >= requestedAmount

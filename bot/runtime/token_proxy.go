@@ -12,6 +12,10 @@ type TokenProxy interface {
 	GetLastName() string
 	GetExtras() map[string]string
 	SetExtras(extras map[string]string)
+	GetLastBotMessageId() int
+	SetLastBotMessageId(id int)
+	GetIsLastBotMessageRemovable() bool
+	SetIsLastBotMessageRemovable(status bool)
 	ToPlainStruct() interface{}
 }
 

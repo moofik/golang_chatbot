@@ -1,7 +1,6 @@
 package runtime
 
 import (
-	"bot-daedalus/config"
 	"bytes"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -17,12 +16,12 @@ type DefaultBot struct {
 	ScenarioName    string
 	TokenFactory    TokenFactory
 	TokenRepository TokenRepository
-	ActionRegistry  func(string, map[string]string) Action
+	ActionRegistry  func(string, map[string]interface{}) Action
 	CommandRegistry func(string, string, []interface{}) Command
 }
 
 func (b *DefaultBot) HandleRequest(mf SerializedMessageFactory) {
-	cfg := config.GetScenarioConfig(b.ScenarioPath, b.ScenarioName)
+	cfg := GetScenarioConfig(b.ScenarioPath, b.ScenarioName)
 	provider, _ := GetProvider(cfg.ProviderConfig, cfg.Name, b.TokenFactory, mf, b.TokenRepository)
 
 	sbuilder := ScenarioBuilder{
@@ -33,7 +32,7 @@ func (b *DefaultBot) HandleRequest(mf SerializedMessageFactory) {
 		states:          nil,
 	}
 
-	s, err := sbuilder.BuildScenario(b.ScenarioPath, b.ScenarioName)
+	s, err := sbuilder.BuildScenario(cfg)
 
 	if err != nil {
 		panic(err)

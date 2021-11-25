@@ -20,9 +20,10 @@ type ActionRegistry struct {
 	DB *gorm.DB
 }
 
-func (ar *ActionRegistry) ActionRegistryHandler(name string, params map[string]string) runtime.Action {
+func (ar *ActionRegistry) ActionRegistryHandler(name string, params map[string]interface{}) runtime.Action {
 	if name == "show_wallet" {
 		return &ShowWallet{
+			Params:           params,
 			WalletRepository: &models.WalletRepository{DB: ar.DB},
 		}
 	}
@@ -341,6 +342,7 @@ func (a *CancelOrderData) Run(
 }
 
 type ShowWallet struct {
+	Params           map[string]interface{}
 	WalletRepository *models.WalletRepository
 }
 
@@ -384,6 +386,7 @@ func (a *ShowWallet) Run(
 	}
 
 	result := tpl.String()
+	lastBotMessageId := uint(t.GetLastBotMessageId())
 	err = p.SendTextMessage(result, runtime.ProviderContext{
 		State:   s,
 		Command: c,
@@ -393,6 +396,14 @@ func (a *ShowWallet) Run(
 	if err != nil {
 		return &runtime.GenericActionError{InnerError: err}
 	}
+
+	if a.Params != nil {
+		if clear, ok := a.Params["clear_previous"]; ok && clear.(bool) && t.GetIsLastBotMessageRemovable() {
+			runtime.DeleteMessage(t.GetChatId(), lastBotMessageId, p.GetConfig().Token)
+		}
+	}
+
+	t.SetIsLastBotMessageRemovable(true)
 
 	return nil
 }

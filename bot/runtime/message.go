@@ -1,7 +1,6 @@
 package runtime
 
 import (
-	"bot-daedalus/config"
 	"bytes"
 	"encoding/json"
 
@@ -46,15 +45,27 @@ type TelegramMessage struct {
 	} `json:"callback_query,omitempty"`
 }
 
+type TelegramOutgoingMessage struct {
+	ChatID      uint                             `json:"chat_id"`
+	Text        string                           `json:"text"`
+	ParseMode   string                           `json:"parse_mode"`
+	ReplyMarkup map[string][][]map[string]string `json:"reply_markup,omitempty"`
+}
+
+type TelegramOutgoingDeleteMessage struct {
+	ChatID    uint `json:"chat_id"`
+	MessageID uint `json:"message_id"`
+}
+
 type SerializedMessageFactory interface {
-	GetSerializedMessage(c config.ProviderConfig) Message
+	GetSerializedMessage(c ProviderConfig) Message
 }
 
 type DefaultSerializedMessageFactory struct {
 	Ctx *gin.Context
 }
 
-func (f *DefaultSerializedMessageFactory) GetSerializedMessage(c config.ProviderConfig) Message {
+func (f *DefaultSerializedMessageFactory) GetSerializedMessage(c ProviderConfig) Message {
 	if c.Name == "telegram" {
 		var json TelegramMessage
 

@@ -4,8 +4,6 @@ import (
 	"bot-daedalus/petrinet"
 	"fmt"
 	"reflect"
-
-	"github.com/spf13/viper"
 )
 
 type Scenario struct {
@@ -16,10 +14,6 @@ type Scenario struct {
 }
 
 func (s *Scenario) GetCurrentState(token TokenProxy) *State {
-	if token == nil {
-		panic("TOKEN IS NIL!!! ЗАДУМАЙСЯ УЕБОК")
-	}
-
 	marking, err := s.Workflow.GetMarking(token)
 
 	if err != nil {
@@ -77,32 +71,37 @@ func (s *Scenario) HandleCommand(cmd Command, currentState *State, token TokenPr
 
 	if actualTransition == nil {
 		if lastOrderCommand != nil {
-			fmt.Println("last order cmd found")
 			actualTransition, err = currentState.GetTransition(lastOrderCommand)
+		} else if token.GetState() != "unknown" {
+			_ = s.Provider.SendMarkupMessage(
+				[]string{"Маркет💵", "Кошелек💠"},
+				"К сожалению я не знаю такой комманды. Вы можете воспользоваться меню ниже.",
+				ProviderContext{
+					State:   currentState,
+					Command: nil,
+					Token:   token,
+				},
+			)
+
+			return token
 		} else {
-			fmt.Println("actual transition not found")
 			return token
 		}
 	}
 
-	if err != nil {
-		// handle state error
-		err := s.Provider.SendTextMessage(err.Error(), ProviderContext{
-			State: currentState,
-			Command: &UserInputCommand{
-				Text: "",
-				Metadata: &CommandMetadata{
-					Cmd:   "/system",
-					Place: "noplace",
-				},
+	if err != nil && token.GetState() != "unknown" {
+		_ = s.Provider.SendMarkupMessage(
+			[]string{"Маркет💵", "Кошелек💠"},
+			"Произошел сбой и я не могу произвести запрошенное действие, но вы можете воспользоваться меню ниже.",
+			ProviderContext{
+				State:   currentState,
+				Command: nil,
+				Token:   token,
 			},
-			Token: token,
-		})
+		)
 
-		if err != nil {
-			return nil
-		}
-
+		return token
+	} else if err != nil {
 		return token
 	}
 
@@ -147,7 +146,7 @@ func (s *Scenario) HandleCommand(cmd Command, currentState *State, token TokenPr
 }
 
 type ScenarioBuilder struct {
-	ActionRegistry   func(string, map[string]string) Action
+	ActionRegistry   func(string, map[string]interface{}) Action
 	CommandRegistry  func(string, string, []interface{}) Command
 	Repository       DelayedTransitionRepository
 	Provider         ChatProvider
@@ -155,25 +154,15 @@ type ScenarioBuilder struct {
 	currentPlaceName string
 }
 
-func (b *ScenarioBuilder) BuildScenario(path string, name string) (*Scenario, error) {
-	viper.SetConfigName(name)
-	viper.AddConfigPath(path)
-	viper.AutomaticEnv()
-	viper.SetConfigType("yml")
-
-	if err := viper.ReadInConfig(); err != nil {
-		fmt.Printf("Error reading config file, %s", err)
-	}
-
-	statesConfig := viper.Get("scenario.states")
-	statesConfigValue := reflect.ValueOf(statesConfig)
-
+func (b *ScenarioBuilder) BuildScenario(config ScenarioConfig) (*Scenario, error) {
+	statesConfigValue := reflect.ValueOf(config.States)
 	b.walk(statesConfigValue)
 
 	markingStorage := &petrinet.MarkingStorage{
 		SingleState:  true,
 		MarkingField: "State",
 	}
+
 	definition := &petrinet.Definition{
 		Transitions:   nil,
 		InitialPlaces: nil,
@@ -271,7 +260,7 @@ func (b *ScenarioBuilder) walkActions(v reflect.Value) []Action {
 		name := ""
 		innerMap := v.MapIndex(k).Elem()
 		needParams := false
-		params := make(map[string]string)
+		params := make(map[string]interface{})
 
 		for _, kk := range innerMap.MapKeys() {
 			if kk.Elem().String() == "name" {
@@ -282,7 +271,7 @@ func (b *ScenarioBuilder) walkActions(v reflect.Value) []Action {
 				needParams = true
 				reflectParams := innerMap.MapIndex(kk).Elem()
 				for _, kk := range reflectParams.MapKeys() {
-					params[kk.Elem().String()] = reflectParams.MapIndex(kk).Elem().String()
+					params[kk.Elem().String()] = reflectParams.MapIndex(kk).Elem().Interface()
 				}
 			}
 		}

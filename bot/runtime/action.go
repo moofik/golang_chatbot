@@ -2,7 +2,9 @@ package runtime
 
 import (
 	"bytes"
+	"encoding/json"
 	"html/template"
+	"net/http"
 )
 
 type Action interface {
@@ -11,7 +13,7 @@ type Action interface {
 }
 
 type SendTextMessage struct {
-	params map[string]string
+	params map[string]interface{}
 }
 
 func (a *SendTextMessage) GetName() string {
@@ -25,20 +27,19 @@ func (a *SendTextMessage) Run(
 	prev *State,
 	c Command,
 ) ActionError {
-	tmpl, err := template.New("test").Parse(a.params["text"])
+	tmpl, err := template.New("test").Parse(a.params["text"].(string))
 	if err != nil {
 		return &GenericActionError{InnerError: err}
 	}
 
 	var tpl bytes.Buffer
-
 	data := t.GetExtras()
-
 	if err := tmpl.Execute(&tpl, data); err != nil {
 		return &GenericActionError{InnerError: err}
 	}
 
 	result := tpl.String()
+	lastBotMessageId := uint(t.GetLastBotMessageId())
 	err = p.SendTextMessage(result, ProviderContext{
 		State:   s,
 		Command: c,
@@ -48,11 +49,17 @@ func (a *SendTextMessage) Run(
 		return &GenericActionError{InnerError: err}
 	}
 
+	if clear, ok := a.params["clear_previous"]; ok && clear.(bool) && t.GetIsLastBotMessageRemovable() {
+		DeleteMessage(t.GetChatId(), lastBotMessageId, p.GetConfig().Token)
+	}
+
+	t.SetIsLastBotMessageRemovable(true)
+
 	return nil
 }
 
 type RememberInput struct {
-	params map[string]string
+	params map[string]interface{}
 }
 
 func (a *RememberInput) GetName() string {
@@ -67,13 +74,13 @@ func (a *RememberInput) Run(
 	c Command,
 ) ActionError {
 	extras := t.GetExtras()
-	extras[a.params["var"]] = c.GetInput()
+	extras[a.params["var"].(string)] = c.GetInput()
 	t.SetExtras(extras)
 	return nil
 }
 
 type RememberCaption struct {
-	params map[string]string
+	params map[string]interface{}
 }
 
 func (a *RememberCaption) GetName() string {
@@ -99,12 +106,70 @@ func (a *RememberCaption) Run(
 	cmd, _ := prev.GetCommandByUniqueness(newCmd)
 
 	extras := t.GetExtras()
-	extras[a.params["var"]] = cmd.GetCaption()
+	extras[a.params["var"].(string)] = cmd.GetCaption()
 	t.SetExtras(extras)
 	return nil
 }
 
-func CreateAction(name string, params map[string]string, actionRegistry func(string, map[string]string) Action) Action {
+type SendReplyMarkup struct {
+	params map[string]interface{}
+}
+
+func (a *SendReplyMarkup) GetName() string {
+	return "send_reply_markup"
+}
+
+func (a *SendReplyMarkup) Run(
+	p ChatProvider,
+	t TokenProxy,
+	s *State,
+	prev *State,
+	c Command,
+) ActionError {
+	tmpl, err := template.New("test").Parse(a.params["text"].(string))
+	if err != nil {
+		return &GenericActionError{InnerError: err}
+	}
+
+	var tpl bytes.Buffer
+
+	data := t.GetExtras()
+
+	if err := tmpl.Execute(&tpl, data); err != nil {
+		return &GenericActionError{InnerError: err}
+	}
+	rawButtons := a.params["buttons"].([]interface{})
+	buttons := make([]string, len(rawButtons))
+
+	for _, button := range rawButtons {
+		buttons = append(buttons, button.(string))
+	}
+
+	/*
+		lastBotMessageId := uint(t.GetLastBotMessageId())
+	*/
+	result := tpl.String()
+	err = p.SendMarkupMessage(buttons, result, ProviderContext{
+		State:   s,
+		Command: c,
+		Token:   t,
+	})
+
+	if err != nil {
+		return &GenericActionError{InnerError: err}
+	}
+
+	/*
+		if clear, ok := a.params["t.SetIsLastBotMessageRemovable(false)"]; ok && clear.(bool) {
+			DeleteMessage(t.GetChatId(), lastBotMessageId, p.GetConfig().Token)
+		}*/
+
+	t.SetIsLastBotMessageRemovable(false)
+
+	return nil
+}
+
+func CreateAction(name string, params map[string]interface{}, actionRegistry func(string, map[string]interface{}) Action) Action {
 	if name == "send_text" {
 		return &SendTextMessage{params: params}
 	}
@@ -115,6 +180,10 @@ func CreateAction(name string, params map[string]string, actionRegistry func(str
 
 	if name == "remember_caption" {
 		return &RememberCaption{params: params}
+	}
+
+	if name == "send_reply_markup" {
+		return &SendReplyMarkup{params: params}
 	}
 
 	if actionRegistry != nil {
@@ -134,4 +203,25 @@ type GenericActionError struct {
 
 func (m *GenericActionError) Error() string {
 	return m.InnerError.Error()
+}
+
+func DeleteMessage(chatId, messageId uint, botToken string) {
+	url := "https://api.telegram.org/bot" + botToken + "/deleteMessage"
+
+	reqBody := &TelegramOutgoingDeleteMessage{
+		ChatID:    uint(chatId),
+		MessageID: uint(messageId),
+	}
+
+	reqBytes, err := json.Marshal(reqBody)
+
+	_, err = http.Post(
+		url,
+		"application/json",
+		bytes.NewBuffer(reqBytes),
+	)
+
+	if err != nil {
+		panic(err)
+	}
 }

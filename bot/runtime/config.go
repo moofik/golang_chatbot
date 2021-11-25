@@ -1,12 +1,9 @@
-package config
+package runtime
 
 import (
 	"fmt"
 	"github.com/spf13/viper"
 )
-
-type StateMachineConfig struct {
-}
 
 type ProviderConfig struct {
 	Name  string
@@ -14,9 +11,9 @@ type ProviderConfig struct {
 }
 
 type ScenarioConfig struct {
-	Name               string
-	ProviderConfig     ProviderConfig
-	StateMachineConfig StateMachineConfig
+	Name           string
+	ProviderConfig ProviderConfig
+	States         interface{}
 }
 
 func GetScenarioConfig(path string, name string) ScenarioConfig {
@@ -37,5 +34,6 @@ func GetScenarioConfig(path string, name string) ScenarioConfig {
 	return ScenarioConfig{
 		Name:           viper.GetString("scenario.name"),
 		ProviderConfig: providerConfig,
+		States:         viper.Get("scenario.states"),
 	}
 }

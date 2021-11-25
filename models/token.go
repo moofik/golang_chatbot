@@ -3,21 +3,22 @@ package models
 import (
 	"bot-daedalus/bot/runtime"
 	"encoding/json"
-	"fmt"
 	"gorm.io/gorm"
 )
 
 type Token struct {
 	gorm.Model
-	ChatId       uint
-	State        string
-	ScenarioName string
-	IsBlocked    bool
-	TimeOffset   int
-	UserName     string
-	FirstName    string
-	LastName     string
-	Extras       string
+	ChatId                    uint
+	State                     string
+	ScenarioName              string
+	IsBlocked                 bool
+	TimeOffset                int
+	UserName                  string
+	FirstName                 string
+	LastName                  string
+	Extras                    string
+	LastBotMessageId          int
+	IsLastBotMessageRemovable bool
 }
 
 func (t *Token) GetExtras() map[string]string {
@@ -77,8 +78,24 @@ func (t *Token) GetLastName() string {
 	return t.LastName
 }
 
+func (t *Token) GetLastBotMessageId() int {
+	return t.LastBotMessageId
+}
+
+func (t *Token) SetLastBotMessageId(id int) {
+	t.LastBotMessageId = id
+}
+
 func (t *Token) ToPlainStruct() interface{} {
 	return t
+}
+
+func (t *Token) GetIsLastBotMessageRemovable() bool {
+	return t.IsLastBotMessageRemovable
+}
+
+func (t *Token) SetIsLastBotMessageRemovable(status bool) {
+	t.IsLastBotMessageRemovable = status
 }
 
 // TokenFactory implementation
@@ -122,7 +139,6 @@ func (tf TokenFactory) GetOrCreate(p runtime.ChatProvider) runtime.TokenProxy {
 				}
 			}
 		} else {
-			fmt.Println("чТО ТО ИНТЕРЕСНОЕ БЛЯТЬ")
 			panic(msg)
 		}
 

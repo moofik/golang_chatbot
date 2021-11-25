@@ -1,11 +1,10 @@
 package runtime
 
 import (
-	"bot-daedalus/config"
 	"fmt"
 )
 
-func GetProvider(config config.ProviderConfig, scenarioName string, tf TokenFactory, mf SerializedMessageFactory, tr TokenRepository) (ChatProvider, error) {
+func GetProvider(config ProviderConfig, scenarioName string, tf TokenFactory, mf SerializedMessageFactory, tr TokenRepository) (ChatProvider, error) {
 	if config.Name == "telegram" {
 		return &TelegramProvider{
 			tf,
