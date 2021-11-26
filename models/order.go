@@ -1,9 +1,7 @@
 package models
 
 import (
-	"fmt"
 	"gorm.io/gorm"
-	"strconv"
 	"time"
 )
 
@@ -38,7 +36,6 @@ func (r *OrderRepository) Persist(order *Order) {
 }
 
 func (r *OrderRepository) Delete(order *Order) {
-	fmt.Println("DELETE ORDER WITH id " + strconv.Itoa(int(order.ID)))
 	r.DB.Delete(order)
 }
 

@@ -401,9 +401,15 @@ func (a *ShowWallet) Run(
 		if clear, ok := a.Params["clear_previous"]; ok && clear.(bool) && t.GetIsLastBotMessageRemovable() {
 			runtime.DeleteMessage(t.GetChatId(), lastBotMessageId, p.GetConfig().Token)
 		}
-	}
 
-	t.SetIsLastBotMessageRemovable(true)
+		if removable, ok := a.Params["removable"]; ok && !removable.(bool) {
+			t.SetIsLastBotMessageRemovable(false)
+		} else {
+			t.SetIsLastBotMessageRemovable(true)
+		}
+	} else {
+		t.SetIsLastBotMessageRemovable(true)
+	}
 
 	return nil
 }

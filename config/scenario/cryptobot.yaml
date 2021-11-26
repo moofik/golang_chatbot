@@ -2,7 +2,7 @@ scenario:
   name: cryptobot
   provider:
     name: telegram
-    token: '2117926131:AAF7tpRWkO1a4qhdjorbGCdfAHAfs8jCV7o' #'1799138792:AAGryx8c1D48yT8TAD5VCG1yzXs8k3tPtIc'
+    token: '2117926131:AAF7tpRWkO1a4qhdjorbGCdfAHAfs8jCV7o'
 
   states:
     -
@@ -25,17 +25,19 @@ scenario:
     -
       name: main_menu
       actions:
+        create_wallet:
+          name: create_wallet
         send_markup:
           name: send_reply_markup
           params:
             buttons: ['Маркет💵', 'Кошелек💠']
+            removable: false
+            clear_previous: true
             text: >
               Снизу находится главное меню бота.
               Маркет - позволит вам продавать и покупать валюту, используя любые сторонние кошельки для криптовалют и переводы на карту.
               Кошелек - ваш кошелек на нашей платформе, с его помощью вы можете с лёгкостью покупать, переводить, продавать, а так же хранить средства 😉
               В обоих случаях мы выступаем гарантом сделок.
-        create_wallet:
-          name: create_wallet
       transitions:
         - { name: to_market_ri, state_to: market, command: { type: 'recognize_input', arguments: [ 'Маркет💵' ] } }
         - { name: to_wallet_ri, state_to: wallet, command: { type: 'recognize_input', arguments: [ 'Кошелек💠' ] } }
@@ -150,11 +152,11 @@ scenario:
         send_text:
           name: send_text
           params:
+            removable: false
             clear_previous: true
             text: >
               Ваш заказ принят в обработку. Средства будут переведены в течении суток. Номер вашего заказа: {{.market_last_order_key}}
       transitions:
-        - {name: to_main_menu_market_buy, state_to: main_menu, command: {type: 'button', arguments: ['/to_main_menu_from_mb5', 'ОК']}}
         - { name: to_market_ri, state_to: market, command: { type: 'recognize_input', arguments: [ 'Маркет💵' ] } }
         - { name: to_wallet_ri, state_to: wallet, command: { type: 'recognize_input', arguments: [ 'Кошелек💠' ] } }
 
@@ -175,7 +177,6 @@ scenario:
         - {name: to_market_sell_2_1, state_to: market_sell_2, command: {type: 'button', arguments: ['/market_sell_bnb', 'BNB']}}
         - {name: to_market_sell_2_2, state_to: market_sell_2, command: {type: 'button', arguments: ['/market_sell_eth', 'ETH']}}
         - {name: to_market_sell_2_3, state_to: market_sell_2, command: {type: 'button', arguments: ['/market_sell_usdt', 'USDT']}}
-        - {name: to_main_menu_msc_1, state_to: main_menu, command: {type: 'button', arguments: ['/market_buy_xcancel_3', 'Отмена ❌']}}
         - { name: to_market_ri, state_to: market, command: { type: 'recognize_input', arguments: [ 'Маркет💵' ] } }
         - { name: to_wallet_ri, state_to: wallet, command: { type: 'recognize_input', arguments: [ 'Кошелек💠' ] } }
 
@@ -238,7 +239,7 @@ scenario:
           params:
             clear_previous: true
             text: >
-              Цена продажи: {{.market_order_payment_sum}}
+              Цена продажи: {{.market_order_payment_sum}} руб.
               Теперь отправьте {{.market_order_sell_amount}} {{.market_order_currency}} на адрес {{.market_order_service_address}}. После завершения, нажмите "Отправлено"
       transitions:
         - {name: to_market_sell_5, state_to: market_sell_5, command: {type: 'button', arguments: ['/market_sell_5', 'Отправлено']}}
@@ -255,10 +256,10 @@ scenario:
           name: send_text
           params:
             clear_previous: true
+            removable: false
             text: >
               Ваш заказ принят в обработку. Средства будут переведены в течении суток. Номер вашего заказа: {{.market_last_order_key}}
       transitions:
-        - {name: to_main_menu_market_buy, state_to: main_menu, command: {type: 'button', arguments: ['/to_main_menu_from_ms5', 'ОК']}}
         - { name: to_market_ri, state_to: market, command: { type: 'recognize_input', arguments: [ 'Маркет💵' ] } }
         - { name: to_wallet_ri, state_to: wallet, command: { type: 'recognize_input', arguments: [ 'Кошелек💠' ] } }
 
@@ -357,10 +358,10 @@ scenario:
           name: send_text
           params:
             clear_previous: true
+            removable: false
             text: >
               Ваш заказ принят в обработку. Средства будут переведены в течении суток. Номер вашего заказа: {{.wallet_last_order_key}}
       transitions:
-        - {name: to_main_menu_wallet_buy, state_to: main_menu, command: {type: 'button', arguments: ['/to_main_menu_from_wb5', 'ОК']}}
         - { name: to_market_ri, state_to: market, command: { type: 'recognize_input', arguments: [ 'Маркет💵' ] } }
         - { name: to_wallet_ri, state_to: wallet, command: { type: 'recognize_input', arguments: [ 'Кошелек💠' ] } }
 
@@ -482,10 +483,10 @@ scenario:
           name: send_text
           params:
             clear_previous: true
+            removable: false
             text: >
               Ваш заказ принят в обработку. Средства будут переведены в течении суток. Номер вашего заказа: {{.wallet_last_order_key}}
       transitions:
-        - {name: to_main_menu_market_buy, state_to: main_menu, command: {type: 'button', arguments: ['/to_main_menu_from_ms5', 'ОК']}}
         - { name: to_market_ri, state_to: market, command: { type: 'recognize_input', arguments: [ 'Маркет💵' ] } }
         - { name: to_wallet_ri, state_to: wallet, command: { type: 'recognize_input', arguments: [ 'Кошелек💠' ] } }
 
@@ -608,12 +609,12 @@ scenario:
         notify_wallet_order:
           name: notify_wallet_order
         send_text:
-          clear_previous: true
           name: send_text
           params:
+            clear_previous: true
+            removable: false
             text: >
               Ваш заказ принят в обработку. Средства будут переведены в течении суток. Номер вашего заказа: {{.wallet_last_order_key}}
       transitions:
-        - {name: to_main_menu_wallet_exchange, state_to: main_menu, command: {type: 'button', arguments: ['/to_main_menu_from_we_6', 'ОК']}}
         - { name: to_market_ri, state_to: market, command: { type: 'recognize_input', arguments: [ 'Маркет💵' ] } }
         - { name: to_wallet_ri, state_to: wallet, command: { type: 'recognize_input', arguments: [ 'Кошелек💠' ] } }

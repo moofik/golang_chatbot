@@ -11,6 +11,7 @@ type Scenario struct {
 	Provider ChatProvider
 	States   map[string]*State
 	DelayedTransitionRepository
+	StateErrorHandler func(p ChatProvider, ctx ProviderContext)
 }
 
 func (s *Scenario) GetCurrentState(token TokenProxy) *State {
@@ -45,11 +46,6 @@ func (s *Scenario) HandleCommand(cmd Command, currentState *State, token TokenPr
 	if cmd.GetType() == TYPE_TEXT_INPUT {
 		var commands []Command
 		commands, err = currentState.GetCommandListByProto(cmd)
-		fmt.Println("COMMANDS RETRIEVED:")
-		for _, command := range commands {
-			fmt.Println(command.Debug())
-		}
-		fmt.Println("END CR")
 
 		for _, c := range commands {
 			if c.GetType() == TYPE_TEXT_INPUT {
@@ -72,36 +68,19 @@ func (s *Scenario) HandleCommand(cmd Command, currentState *State, token TokenPr
 	if actualTransition == nil {
 		if lastOrderCommand != nil {
 			actualTransition, err = currentState.GetTransition(lastOrderCommand)
-		} else if token.GetState() != "unknown" {
-			_ = s.Provider.SendMarkupMessage(
-				[]string{"Маркет💵", "Кошелек💠"},
-				"К сожалению я не знаю такой комманды. Вы можете воспользоваться меню ниже.",
-				ProviderContext{
-					State:   currentState,
-					Command: nil,
-					Token:   token,
-				},
-			)
-
+		} else if s.StateErrorHandler != nil {
+			s.StateErrorHandler(s.Provider, ProviderContext{
+				State:   currentState,
+				Command: nil,
+				Token:   token,
+			})
 			return token
 		} else {
 			return token
 		}
 	}
 
-	if err != nil && token.GetState() != "unknown" {
-		_ = s.Provider.SendMarkupMessage(
-			[]string{"Маркет💵", "Кошелек💠"},
-			"Произошел сбой и я не могу произвести запрошенное действие, но вы можете воспользоваться меню ниже.",
-			ProviderContext{
-				State:   currentState,
-				Command: nil,
-				Token:   token,
-			},
-		)
-
-		return token
-	} else if err != nil {
+	if err != nil {
 		return token
 	}
 
@@ -146,12 +125,13 @@ func (s *Scenario) HandleCommand(cmd Command, currentState *State, token TokenPr
 }
 
 type ScenarioBuilder struct {
-	ActionRegistry   func(string, map[string]interface{}) Action
-	CommandRegistry  func(string, string, []interface{}) Command
-	Repository       DelayedTransitionRepository
-	Provider         ChatProvider
-	states           map[string]*State
-	currentPlaceName string
+	ActionRegistry    func(string, map[string]interface{}) Action
+	CommandRegistry   func(string, string, []interface{}) Command
+	StateErrorHandler func(p ChatProvider, ctx ProviderContext)
+	Repository        DelayedTransitionRepository
+	Provider          ChatProvider
+	states            map[string]*State
+	currentPlaceName  string
 }
 
 func (b *ScenarioBuilder) BuildScenario(config ScenarioConfig) (*Scenario, error) {
@@ -194,6 +174,7 @@ func (b *ScenarioBuilder) BuildScenario(config ScenarioConfig) (*Scenario, error
 		b.Provider,
 		b.states,
 		b.Repository,
+		b.StateErrorHandler,
 	}, nil
 }
 

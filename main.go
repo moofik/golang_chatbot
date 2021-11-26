@@ -24,7 +24,7 @@ type Config struct {
 
 func logRequestMiddleware(c *gin.Context) {
 	body, _ := ioutil.ReadAll(c.Request.Body)
-	println(string(body))
+	fmt.Println(string(body))
 
 	c.Request.Body = ioutil.NopCloser(bytes.NewReader(body))
 }
@@ -66,12 +66,13 @@ func main() {
 		actionRegistry := app.ActionRegistry{DB: db}
 		commandRegistry := app.CommandRegistry{DB: db}
 		bot := runtime.DefaultBot{
-			ScenarioPath:    "config/scenario",
-			ScenarioName:    "cryptobot",
-			TokenFactory:    models.TokenFactory{DB: db},
-			TokenRepository: &models.TokenRepository{DB: db},
-			ActionRegistry:  actionRegistry.ActionRegistryHandler,
-			CommandRegistry: commandRegistry.CommandRegistryHandler,
+			ScenarioPath:      "config/scenario",
+			ScenarioName:      "cryptobot",
+			TokenFactory:      models.TokenFactory{DB: db},
+			TokenRepository:   &models.TokenRepository{DB: db},
+			ActionRegistry:    actionRegistry.ActionRegistryHandler,
+			CommandRegistry:   commandRegistry.CommandRegistryHandler,
+			StateErrorHandler: app.CryptobotStateErrorHandler,
 		}
 		logRequestMiddleware(c)
 		bot.HandleRequest(&runtime.DefaultSerializedMessageFactory{Ctx: c})

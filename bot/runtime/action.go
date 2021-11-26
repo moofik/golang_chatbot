@@ -51,9 +51,15 @@ func (a *SendTextMessage) Run(
 
 	if clear, ok := a.params["clear_previous"]; ok && clear.(bool) && t.GetIsLastBotMessageRemovable() {
 		DeleteMessage(t.GetChatId(), lastBotMessageId, p.GetConfig().Token)
-	}
 
-	t.SetIsLastBotMessageRemovable(true)
+		if removable, ok := a.params["removable"]; ok && !removable.(bool) {
+			t.SetIsLastBotMessageRemovable(false)
+		} else {
+			t.SetIsLastBotMessageRemovable(true)
+		}
+	} else {
+		t.SetIsLastBotMessageRemovable(true)
+	}
 
 	return nil
 }
@@ -145,9 +151,7 @@ func (a *SendReplyMarkup) Run(
 		buttons = append(buttons, button.(string))
 	}
 
-	/*
-		lastBotMessageId := uint(t.GetLastBotMessageId())
-	*/
+	lastBotMessageId := uint(t.GetLastBotMessageId())
 	result := tpl.String()
 	err = p.SendMarkupMessage(buttons, result, ProviderContext{
 		State:   s,
@@ -159,10 +163,17 @@ func (a *SendReplyMarkup) Run(
 		return &GenericActionError{InnerError: err}
 	}
 
-	/*
-		if clear, ok := a.params["t.SetIsLastBotMessageRemovable(false)"]; ok && clear.(bool) {
-			DeleteMessage(t.GetChatId(), lastBotMessageId, p.GetConfig().Token)
-		}*/
+	if clear, ok := a.params["clear_previous"]; ok && clear.(bool) && t.GetIsLastBotMessageRemovable() {
+		DeleteMessage(t.GetChatId(), lastBotMessageId, p.GetConfig().Token)
+
+		if removable, ok := a.params["removable"]; ok && !removable.(bool) {
+			t.SetIsLastBotMessageRemovable(false)
+		} else {
+			t.SetIsLastBotMessageRemovable(true)
+		}
+	} else {
+		t.SetIsLastBotMessageRemovable(true)
+	}
 
 	t.SetIsLastBotMessageRemovable(false)
 
