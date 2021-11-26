@@ -151,8 +151,8 @@ func (p *TelegramProvider) SendTextMessage(text string, ctx ProviderContext) err
 	}
 
 	if len(buttonsSlice) > 0 {
-		reqBody.ReplyMarkup = map[string][][]map[string]string{
-			"inline_keyboard": buttonsSlice,
+		reqBody.ReplyMarkup = TelegramReplyMarkup{
+			InlineKeyboard: buttonsSlice,
 		}
 	}
 
@@ -210,8 +210,9 @@ func (p *TelegramProvider) SendMarkupMessage(buttons []string, text string, ctx 
 	}
 
 	if len(buttonsSlice) > 0 {
-		reqBody.ReplyMarkup = map[string][][]map[string]string{
-			"keyboard": buttonsSlice,
+		reqBody.ReplyMarkup = TelegramReplyMarkup{
+			Keyboard:       buttonsSlice,
+			ResizeKeyboard: true,
 		}
 	}
 

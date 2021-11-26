@@ -45,11 +45,17 @@ type TelegramMessage struct {
 	} `json:"callback_query,omitempty"`
 }
 
+type TelegramReplyMarkup struct {
+	InlineKeyboard [][]map[string]string `json:"inline_keyboard,omitempty"`
+	Keyboard       [][]map[string]string `json:"keyboard,omitempty"`
+	ResizeKeyboard bool                  `json:"resize_keyboard,omitempty"`
+}
+
 type TelegramOutgoingMessage struct {
-	ChatID      uint                             `json:"chat_id"`
-	Text        string                           `json:"text"`
-	ParseMode   string                           `json:"parse_mode"`
-	ReplyMarkup map[string][][]map[string]string `json:"reply_markup,omitempty"`
+	ChatID      uint                `json:"chat_id"`
+	Text        string              `json:"text"`
+	ParseMode   string              `json:"parse_mode"`
+	ReplyMarkup TelegramReplyMarkup `json:"reply_markup,omitempty"`
 }
 
 type TelegramOutgoingDeleteMessage struct {
