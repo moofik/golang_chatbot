@@ -145,7 +145,7 @@ func (p *TelegramProvider) SendTextMessage(text string, ctx ProviderContext) err
 	}
 
 	reqBody := &TelegramOutgoingMessage{
-		ChatID:    p.GetToken().GetChatId(),
+		ChatID:    ctx.Token.GetChatId(),
 		Text:      text,
 		ParseMode: "HTML",
 	}

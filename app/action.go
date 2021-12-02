@@ -7,10 +7,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
 	"gorm.io/gorm"
 	"html/template"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -116,7 +118,8 @@ func (a *CalculateMarketBuyOrder) Run(
 	c runtime.Command,
 ) runtime.ActionError {
 	extras := t.GetExtras()
-	buyAmount, err := strconv.ParseFloat(extras["market_order_buy_amount"], 64)
+	buyAmountRaw := strings.Replace(extras["market_order_buy_amount"], ",", ".", -1)
+	buyAmount, err := strconv.ParseFloat(buyAmountRaw, 64)
 	if err != nil {
 		return nil
 	}
@@ -154,6 +157,10 @@ func (a *CalculateMarketBuyOrder) Run(
 	return nil
 }
 
+func (a *CalculateMarketBuyOrder) GetAlias() string {
+	return "a1"
+}
+
 type CalculateMarketSellOrder struct {
 	OrderRepository *models.OrderRepository
 }
@@ -170,7 +177,8 @@ func (a *CalculateMarketSellOrder) Run(
 	c runtime.Command,
 ) runtime.ActionError {
 	extras := t.GetExtras()
-	sellAmount, err := strconv.ParseFloat(extras["market_order_sell_amount"], 64)
+	amountRaw := strings.Replace(extras["market_order_sell_amount"], ",", ".", -1)
+	sellAmount, err := strconv.ParseFloat(amountRaw, 64)
 	if err != nil {
 		return nil
 	}
@@ -465,10 +473,16 @@ func (a *CalculateWalletBuyOrder) Run(
 	c runtime.Command,
 ) runtime.ActionError {
 	extras := t.GetExtras()
-	buyAmount, err := strconv.ParseFloat(extras["wallet_order_buy_amount"], 64)
+	buyAmount, err := strconv.ParseFloat(
+		strings.Replace(extras["wallet_order_buy_amount"], ",", ".", -1),
+		64,
+	)
+
 	if err != nil {
 		fmt.Println("error: " + err.Error())
-		return &runtime.GenericActionError{InnerError: err}
+		return &runtime.GenericActionError{
+			InnerError: errors.Errorf("Формат валюты должен быть следующим ( с точкой разделителем ): 23.940"),
+		}
 	}
 
 	paymentSum, actualPrice, err := ConvertCrypto(extras["wallet_order_currency"], "RUB", buyAmount, true)
@@ -524,7 +538,9 @@ func (a *CalculateWalletSellOrder) Run(
 	c runtime.Command,
 ) runtime.ActionError {
 	extras := t.GetExtras()
-	sellAmount, err := strconv.ParseFloat(extras["wallet_order_sell_amount"], 64)
+	amountRaw := strings.Replace(extras["wallet_order_sell_amount"], ",", ".", -1)
+	sellAmount, err := strconv.ParseFloat(amountRaw, 64)
+
 	if err != nil {
 		fmt.Println("error: " + err.Error())
 		return &runtime.GenericActionError{InnerError: err}
@@ -581,7 +597,8 @@ func (a *CalculateWalletExchangeOrder) Run(
 	c runtime.Command,
 ) runtime.ActionError {
 	extras := t.GetExtras()
-	exchangeAmount, err := strconv.ParseFloat(extras["wallet_order_exchange_amount"], 64)
+	amountRaw := strings.Replace(extras["wallet_order_exchange_amount"], ",", ".", -1)
+	exchangeAmount, err := strconv.ParseFloat(amountRaw, 64)
 
 	if err != nil {
 		fmt.Println("error: " + err.Error())

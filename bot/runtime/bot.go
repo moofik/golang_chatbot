@@ -21,7 +21,7 @@ type DefaultBot struct {
 	StateErrorHandler func(p ChatProvider, ctx ProviderContext)
 }
 
-func (b *DefaultBot) HandleRequest(mf SerializedMessageFactory) {
+func (b *DefaultBot) GetBaseActors(mf SerializedMessageFactory) (ScenarioConfig, ChatProvider, *Scenario) {
 	cfg := GetScenarioConfig(b.ScenarioPath, b.ScenarioName)
 	provider, _ := GetProvider(cfg.ProviderConfig, cfg.Name, b.TokenFactory, mf, b.TokenRepository)
 
@@ -40,6 +40,11 @@ func (b *DefaultBot) HandleRequest(mf SerializedMessageFactory) {
 		panic(err)
 	}
 
+	return cfg, provider, s
+}
+
+func (b *DefaultBot) HandleRequest(mf SerializedMessageFactory) {
+	_, _, s := b.GetBaseActors(mf)
 	token := s.Provider.GetToken()
 	currentState := s.GetCurrentState(token)
 	cmd := s.Provider.GetCommand(currentState)

@@ -152,6 +152,15 @@ type TokenRepository struct {
 	DB *gorm.DB
 }
 
+func (r *TokenRepository) FindById(id int) runtime.TokenProxy {
+	var token Token
+	res := r.DB.First(&token, "id = ?", id)
+	if res.Error != nil {
+		return nil
+	}
+	return &token
+}
+
 func (r *TokenRepository) FindByChatIdAndScenario(chatId int, scenario string) runtime.TokenProxy {
 	var token Token
 	res := r.DB.First(&token, "chat_id = ? and scenario_name = ?", chatId, scenario)

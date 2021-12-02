@@ -75,7 +75,7 @@ func (f *DefaultSerializedMessageFactory) GetSerializedMessage(c ProviderConfig)
 	if c.Name == "telegram" {
 		var json TelegramMessage
 
-		if f.Ctx.BindJSON(&json) == nil {
+		if f.Ctx != nil && f.Ctx.BindJSON(&json) == nil {
 			return json
 		}
 
