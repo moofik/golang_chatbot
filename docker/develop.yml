@@ -5,6 +5,11 @@ services:
     build: go
     image: crypto/web
     container_name: web
+    environment:
+      DB_HOST: db
+      DB_USERNAME: crypto
+      DB_PASSWORD: crypto
+      DB_DATABASE: crypto
     restart: always
     ports:
       - "80:8181"

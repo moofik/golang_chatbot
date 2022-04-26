@@ -20,6 +20,11 @@ services:
     image: moofik/chatbot_api:latest
     restart: always
     container_name: web
+    environment:
+      DB_HOST: db
+      DB_USERNAME: crypto
+      DB_PASSWORD: crypto
+      DB_DATABASE: crypto
     ports:
       - "8181:8181"
     volumes:
