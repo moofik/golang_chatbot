@@ -32,7 +32,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.traefik-router.entrypoints=websecure"
-      - "traefik.http.routers.traefik-router.rule=Host(`moofik.com`)"
+      - "traefik.http.routers.traefik-router.rule=Host(`spl-bck.ru`)"
       - "traefik.http.routers.traefik-router.tls.certresolver=letsencrypt"
     networks:
       - crypto
