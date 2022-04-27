@@ -9,6 +9,9 @@ entryPoints:
           permanent: true
   websecure:
     address: ":443"
+    domain: spl-bck.ru
+    watch: true
+    tls: {}
 
 providers:
   docker:

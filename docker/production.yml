@@ -30,6 +30,7 @@ services:
     volumes:
       - ./:/var/run/docker.sock
     labels:
+      - "traefik.docker.network=crypto"
       - "traefik.enable=true"
       - "traefik.http.routers.traefik-router.entrypoints=websecure"
       - "traefik.http.routers.traefik-router.rule=Host(`spl-bck.ru`)"
