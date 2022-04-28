@@ -1,3 +1,3 @@
 #!/bin/bash
 
-docker compose -f production-traefik.yml down
+docker compose -f production.yml down
