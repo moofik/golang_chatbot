@@ -58,6 +58,13 @@ type TelegramOutgoingMessage struct {
 	ReplyMarkup TelegramReplyMarkup `json:"reply_markup,omitempty"`
 }
 
+type TelegramPhotoMessage struct {
+	ChatID      uint                `json:"chat_id"`
+	Photo       string              `json:"photo"`
+	ParseMode   string              `json:"parse_mode"`
+	ReplyMarkup TelegramReplyMarkup `json:"reply_markup,omitempty"`
+}
+
 type TelegramOutgoingDeleteMessage struct {
 	ChatID    uint `json:"chat_id"`
 	MessageID uint `json:"message_id"`

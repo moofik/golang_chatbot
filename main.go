@@ -94,6 +94,12 @@ func main() {
 	}
 
 	r := gin.Default()
+	r.StaticFile("/1.jpg", "./resources/1.jpg")
+	r.StaticFile("/2.jpg", "./resources/2.jpg")
+	r.StaticFile("/3.jpg", "./resources/3.jpg")
+	r.StaticFile("/4.jpg", "./resources/4.jpg")
+	r.StaticFile("/5.jpg", "./resources/5.jpg")
+	r.StaticFile("/6.jpg", "./resources/6.jpg")
 	r.POST("/crypto", cryptoClientHandler)
 	r.POST("/cryptoadmin", cryptoAdminHandler)
 	r.GET("/", healthcheckHandler)

@@ -1,0 +1,620 @@
+scenario:
+  name: cryptobot
+  provider:
+    name: telegram
+    token: '2117926131:AAF7tpRWkO1a4qhdjorbGCdfAHAfs8jCV7o' #'2067097332:AAEHszUM1n1Dfrut0_XY_C3YAbiH_KI_Qas' #
+
+  states:
+    -
+      name: unknown
+      transitions:
+        - {name: to_start, state_to: start, command: {type: 'recognize_input', arguments: ['/start']}}
+
+    -
+      name: start
+      actions:
+        send_text:
+          name: send_text
+          params:
+            text: >
+              Привет! Я помогу вам продать или купить криптовалюту. А еще у нас есть кошелёк, где вы сможете безопасно хранить свои средства :)
+              Я уже зарегестрировал ваш аккаунт в системе, чтобы воспользоваться ботом переходите в главное меню.
+      transitions:
+        - {name: to_main_menu, state_to: main_menu, command: {type: 'button', arguments: ['/back', 'Перейти в меню']}}
+
+    -
+      name: main_menu
+      actions:
+        create_wallet:
+          name: create_wallet
+        send_markup:
+          name: send_reply_markup
+          params:
+            buttons: ['Маркет💵', 'Кошелек💠']
+            removable: false
+            clear_previous: true
+            text: >
+              Снизу находится главное меню бота.
+              Маркет - позволит вам продавать и покупать валюту, используя любые сторонние кошельки для криптовалют и переводы на карту.
+              Кошелек - ваш кошелек на нашей платформе, с его помощью вы можете с лёгкостью покупать, переводить, продавать, а так же хранить средства 😉
+              В обоих случаях мы выступаем гарантом сделок.
+      transitions:
+        - { name: to_market_ri, state_to: market, command: { type: 'recognize_input', arguments: [ 'Маркет💵' ] } }
+        - { name: to_wallet_ri, state_to: wallet, command: { type: 'recognize_input', arguments: [ 'Кошелек💠' ] } }
+
+    -
+      name: market
+      actions:
+        cancel_order_data:
+          name: cancel_order_data
+        send_text:
+          name: send_text
+          params:
+            clear_previous: true
+            text: >
+              Маркет позволяет продавать и покупать криптовалюту, используя любые сторонние кошельки для криптовалют или переводы на карту.
+              Бот выступает гарантом сделки и блокирует монеты на время ее совершения. С пользователя списывается комиссия в 3%.
+      transitions:
+        - {name: to_market_buy, state_to: market_buy, command: {type: 'button', arguments: ['/market_buy', 'Купить']}}
+        - {name: to_market_sell, state_to: market_sell, command: {type: 'button', arguments: ['/market_sell', 'Продать']}}
+        - { name: to_market_ri, state_to: market, command: { type: 'recognize_input', arguments: [ 'Маркет💵' ] } }
+        - { name: to_wallet_ri, state_to: wallet, command: { type: 'recognize_input', arguments: [ 'Кошелек💠' ] } }
+    -
+      name: market_buy
+      actions:
+        remember_type:
+          name: remember_caption
+          params: { var: 'market_order_type' }
+        send_text:
+          name: send_text
+          params:
+            clear_previous: true
+            text: >
+              Теперь выберите крипитовалюту, которую требуется купить.
+      transitions:
+        - {name: to_market_buy_2, state_to: market_buy_2, command: {type: 'button', arguments: ['/market_buy_btc', 'BTC']}}
+        - {name: to_market_buy_2_2, state_to: market_buy_2, command: {type: 'button', arguments: ['/market_buy_eth', 'ETH']}}
+        - {name: to_market_buy_2_3, state_to: market_buy_2, command: {type: 'button', arguments: ['/market_buy_usdt', 'USDT']}}
+        - {name: to_market_buy_2_4, state_to: market_buy_2, command: {type: 'button', arguments: ['/market_buy_bnb', 'BNB']}}
+        - { name: to_market_ri, state_to: market, command: { type: 'recognize_input', arguments: [ 'Маркет💵' ] } }
+        - { name: to_wallet_ri, state_to: wallet, command: { type: 'recognize_input', arguments: [ 'Кошелек💠' ] } }
+    -
+      name: market_buy_2
+      actions:
+        remember_type:
+          name: remember_caption
+          params: { var: 'market_order_currency' }
+        send_text:
+          name: send_text
+          params:
+            clear_previous: true
+            text: >
+              Введите сумму в {{.market_order_currency}}, которую требуется приобрести
+      transitions:
+        - { name: to_market_buy_3, state_to: market_buy_3, command: { type: 'text_input' } }
+        - { name: to_market_ri, state_to: market, command: { type: 'recognize_input', arguments: [ 'Маркет💵' ] } }
+        - { name: to_wallet_ri, state_to: wallet, command: { type: 'recognize_input', arguments: [ 'Кошелек💠' ] } }
+
+    -
+      name: market_buy_3
+      actions:
+        remember_name:
+          name: remember_input
+          params: { var: 'market_order_buy_amount' }
+        send_text:
+          name: send_text
+          params:
+            clear_previous: true
+            text: >
+              Введите адрес своего {{.market_order_currency}} кошелька, куда будут отправлены средства после покупки.
+      transitions:
+        - { name: to_market_buy_co, state_to: market_buy_co, command: { type: 'text_input' } }
+        - { name: to_market_ri, state_to: market, command: { type: 'recognize_input', arguments: [ 'Маркет💵' ] } }
+        - { name: to_wallet_ri, state_to: wallet, command: { type: 'recognize_input', arguments: [ 'Кошелек💠' ] } }
+
+    -
+      name: market_buy_co
+      actions:
+        remember_name:
+          name: remember_input
+          params: { var: 'market_order_buy_address' }
+      transitions:
+        - {name: to_market_buy_co2, state_to: market_buy_co2, command: {type: 'instant'}}
+
+    -
+      name: market_buy_co2
+      actions:
+        calculate_market_buy_order:
+          name: calculate_market_buy_order
+      transitions:
+        - {name: to_market_buy_4, state_to: market_buy_4, command: {type: 'instant'}}
+
+    -
+      name: market_buy_4
+      actions:
+        send_text:
+          name: send_text
+          params:
+            clear_previous: true
+            text: >
+              Остался последний шаг. Отправьте {{.market_order_payment_sum}} руб. на карту {{.market_order_service_card}}. После завершения, нажмите "Отправлено"
+      transitions:
+        - {name: to_market_buy_5, state_to: market_buy_5, command: {type: 'button', arguments: ['/market_buy_5', 'Отправлено']}}
+        - {name: to_main_menu_mbc_2, state_to: main_menu, command: {type: 'button', arguments: ['/market_buy_xcancel_2', 'Отмена ❌']}}
+        - { name: to_market_ri, state_to: market, command: { type: 'recognize_input', arguments: [ 'Маркет💵' ] } }
+        - { name: to_wallet_ri, state_to: wallet, command: { type: 'recognize_input', arguments: [ 'Кошелек💠' ] } }
+
+    -
+      name: market_buy_5
+      actions:
+        confirm_market_order:
+          name: confirm_market_order
+        send_text:
+          name: send_text
+          params:
+            removable: false
+            clear_previous: true
+            text: >
+              Ваш заказ принят в обработку. Средства будут переведены в течении суток. Номер вашего заказа: {{.market_last_order_key}}
+      transitions:
+        - { name: to_market_ri, state_to: market, command: { type: 'recognize_input', arguments: [ 'Маркет💵' ] } }
+        - { name: to_wallet_ri, state_to: wallet, command: { type: 'recognize_input', arguments: [ 'Кошелек💠' ] } }
+
+    -
+      name: market_sell
+      actions:
+        remember_type:
+          name: remember_caption
+          params: { var: 'market_order_type' }
+        send_text:
+          name: send_text
+          params:
+            clear_previous: true
+            text: >
+              Теперь выберите крипитовалюту, которую требуется продать.
+      transitions:
+        - {name: to_market_sell_2, state_to: market_sell_2, command: {type: 'button', arguments: ['/market_sell_btc', 'BTC']}}
+        - {name: to_market_sell_2_1, state_to: market_sell_2, command: {type: 'button', arguments: ['/market_sell_bnb', 'BNB']}}
+        - {name: to_market_sell_2_2, state_to: market_sell_2, command: {type: 'button', arguments: ['/market_sell_eth', 'ETH']}}
+        - {name: to_market_sell_2_3, state_to: market_sell_2, command: {type: 'button', arguments: ['/market_sell_usdt', 'USDT']}}
+        - { name: to_market_ri, state_to: market, command: { type: 'recognize_input', arguments: [ 'Маркет💵' ] } }
+        - { name: to_wallet_ri, state_to: wallet, command: { type: 'recognize_input', arguments: [ 'Кошелек💠' ] } }
+
+    -
+      name: market_sell_2
+      actions:
+        remember_type:
+          name: remember_caption
+          params: { var: 'market_order_currency' }
+        send_text:
+          name: send_text
+          params:
+            clear_previous: true
+            text: >
+              Введите сумму в {{.market_order_currency}}, которую требуется продать
+      transitions:
+        - { name: to_market_sell_3, state_to: market_sell_3, command: { type: 'text_input' } }
+        - { name: to_market_ri, state_to: market, command: { type: 'recognize_input', arguments: [ 'Маркет💵' ] } }
+        - { name: to_wallet_ri, state_to: wallet, command: { type: 'recognize_input', arguments: [ 'Кошелек💠' ] } }
+
+    -
+      name: market_sell_3
+      actions:
+        remember_name:
+          name: remember_input
+          params: { var: 'market_order_sell_amount' }
+        send_text:
+          name: send_text
+          params:
+            clear_previous: true
+            text: >
+              Введите номер своей карты, на нее будут отправлены средства после продажи.
+      transitions:
+        - { name: to_market_sell_co, state_to: market_sell_co, command: { type: 'text_input' } }
+        - { name: to_market_ri, state_to: market, command: { type: 'recognize_input', arguments: [ 'Маркет💵' ] } }
+        - { name: to_wallet_ri, state_to: wallet, command: { type: 'recognize_input', arguments: [ 'Кошелек💠' ] } }
+
+    -
+      name: market_sell_co
+      actions:
+        remember_name:
+          name: remember_input
+          params: { var: 'market_order_sell_card' }
+      transitions:
+        - {name: to_market_sell_co2, state_to: market_sell_co2, command: {type: 'instant'}}
+
+    -
+      name: market_sell_co2
+      actions:
+        calculate_market_sell_order:
+          name: calculate_market_sell_order
+      transitions:
+        - {name: to_market_sell_4, state_to: market_sell_4, command: {type: 'instant'}}
+
+    -
+      name: market_sell_4
+      actions:
+        send_text:
+          name: send_text
+          params:
+            clear_previous: true
+            text: >
+              Цена продажи: {{.market_order_payment_sum}} руб.
+              Теперь отправьте {{.market_order_sell_amount}} {{.market_order_currency}} на адрес {{.market_order_service_address}}. После завершения, нажмите "Отправлено"
+      transitions:
+        - {name: to_market_sell_5, state_to: market_sell_5, command: {type: 'button', arguments: ['/market_sell_5', 'Отправлено']}}
+        - {name: to_main_menu_msc_2, state_to: main_menu, command: {type: 'button', arguments: ['/market_buy_cancel_4', 'Отмена ❌']}}
+        - { name: to_market_ri, state_to: market, command: { type: 'recognize_input', arguments: [ 'Маркет💵' ] } }
+        - { name: to_wallet_ri, state_to: wallet, command: { type: 'recognize_input', arguments: [ 'Кошелек💠' ] } }
+
+    -
+      name: market_sell_5
+      actions:
+        confirm_market_order:
+          name: confirm_market_order
+        send_text:
+          name: send_text
+          params:
+            clear_previous: true
+            removable: false
+            text: >
+              Ваш заказ принят в обработку. Средства будут переведены в течении суток. Номер вашего заказа: {{.market_last_order_key}}
+      transitions:
+        - { name: to_market_ri, state_to: market, command: { type: 'recognize_input', arguments: [ 'Маркет💵' ] } }
+        - { name: to_wallet_ri, state_to: wallet, command: { type: 'recognize_input', arguments: [ 'Кошелек💠' ] } }
+
+    -
+      name: wallet
+      actions:
+        cancel_order_data:
+          name: cancel_order_data
+        show_wallet:
+          name: show_wallet
+          params:
+            clear_previous: true
+      transitions:
+        - {name: to_wallet_buy_1, state_to: wallet_buy_1, command: {type: 'button', arguments: ['/to_wallet_buy_1_from_wallet', 'Купить']}}
+        - {name: to_wallet_sell_1, state_to: wallet_sell_1, command: {type: 'button', arguments: ['/to_wallet_sell_1_from_wallet', 'Продать']}}
+        - {name: to_wallet_exchange_1, state_to: wallet_exchange_1, command: {type: 'button', arguments: ['/to_wallet_exchange_1_from_wallet', 'Перевод']}}
+        - { name: to_market_ri, state_to: market, command: { type: 'recognize_input', arguments: [ 'Маркет💵' ] } }
+        - { name: to_wallet_ri, state_to: wallet, command: { type: 'recognize_input', arguments: [ 'Кошелек💠' ] } }
+
+    -
+      name: wallet_buy_1
+      actions:
+        remember_type:
+          name: remember_caption
+          params: { var: 'wallet_order_type' }
+        send_text:
+          name: send_text
+          params:
+            clear_previous: true
+            text: >
+              Выберите валюту, которую вы хотите приобрести
+      transitions:
+        - {name: to_wallet_buy_2_wallet_1, state_to: wallet_buy_2, command: {type: 'button', arguments: ['/wallet_buy_btc', 'BTC']}}
+        - {name: to_wallet_buy_2_wallet_2, state_to: wallet_buy_2, command: {type: 'button', arguments: ['/wallet_buy_eth', 'ETH']}}
+        - {name: to_wallet_buy_2_wallet_3, state_to: wallet_buy_2, command: {type: 'button', arguments: ['/wallet_buy_bnb', 'BNB']}}
+        - {name: to_wallet_buy_2_wallet_4, state_to: wallet_buy_2, command: {type: 'button', arguments: ['/wallet_buy_usdt', 'USDT']}}
+        - { name: to_market_ri, state_to: market, command: { type: 'recognize_input', arguments: [ 'Маркет💵' ] } }
+        - { name: to_wallet_ri, state_to: wallet, command: { type: 'recognize_input', arguments: [ 'Кошелек💠' ] } }
+
+
+    -
+      name: wallet_buy_2
+      actions:
+        remember_type:
+          name: remember_caption
+          params: { var: 'wallet_order_currency' }
+        send_text:
+          name: send_text
+          params:
+            clear_previous: true
+            text: >
+              Введите сумму в {{.wallet_order_currency}}, которую требуется приобрести
+      transitions:
+        - { name: to_wallet_buy_co, state_to: wallet_buy_co, command: { type: 'text_input' } }
+        - { name: to_market_ri, state_to: market, command: { type: 'recognize_input', arguments: [ 'Маркет💵' ] } }
+        - { name: to_wallet_ri, state_to: wallet, command: { type: 'recognize_input', arguments: [ 'Кошелек💠' ] } }
+
+    -
+      name: wallet_buy_co
+      actions:
+        remember_name:
+          name: remember_input
+          params: { var: 'wallet_order_buy_amount' }
+      transitions:
+        - {name: to_wallet_buy_co2, state_to: wallet_buy_co2, command: {type: 'instant'}}
+
+    -
+      name: wallet_buy_co2
+      actions:
+        calculate_wallet_buy_order:
+          name: calculate_wallet_buy_order
+      transitions:
+        - {name: to_wallet_buy_4, state_to: wallet_buy_4, command: {type: 'instant'}}
+
+    -
+      name: wallet_buy_4
+      actions:
+        send_text:
+          name: send_text
+          params:
+            clear_previous: true
+            text: >
+              Остался последний шаг. Отправьте {{.wallet_order_payment_sum}} руб. на карту {{.wallet_order_service_card}}. После завершения, нажмите "Отправлено"
+      transitions:
+        - {name: to_wallet_buy_5, state_to: wallet_buy_5, command: {type: 'button', arguments: ['/wallet_buy_5', 'Отправлено']}}
+        - {name: to_main_menu_wbc_4, state_to: main_menu, command: {type: 'button', arguments: ['/wallet_buy_5_cancel_2', 'Отмена ❌']}}
+        - { name: to_market_ri, state_to: market, command: { type: 'recognize_input', arguments: [ 'Маркет💵' ] } }
+        - { name: to_wallet_ri, state_to: wallet, command: { type: 'recognize_input', arguments: [ 'Кошелек💠' ] } }
+
+    -
+      name: wallet_buy_5
+      actions:
+        notify_wallet_order:
+          name: notify_wallet_order
+        send_text:
+          name: send_text
+          params:
+            clear_previous: true
+            removable: false
+            text: >
+              Ваш заказ принят в обработку. Средства будут переведены в течении суток. Номер вашего заказа: {{.wallet_last_order_key}}
+      transitions:
+        - { name: to_market_ri, state_to: market, command: { type: 'recognize_input', arguments: [ 'Маркет💵' ] } }
+        - { name: to_wallet_ri, state_to: wallet, command: { type: 'recognize_input', arguments: [ 'Кошелек💠' ] } }
+
+    -
+      name: wallet_sell_1
+      actions:
+        remember_type:
+          name: remember_caption
+          params: { var: 'wallet_order_type' }
+        send_text:
+          name: send_text
+          params:
+            clear_previous: true
+            text: >
+              Выберите валюту, которую вы хотите продать
+      transitions:
+        - {name: to_wallet_sell_1_1_wallet_1, state_to: wallet_sell_1_1, command: {type: 'button', arguments: ['/wallet_sell_btc', 'BTC']}}
+        - {name: to_wallet_sell_1_1_wallet_2, state_to: wallet_sell_1_1, command: {type: 'button', arguments: ['/wallet_sell_eth', 'ETH']}}
+        - {name: to_wallet_sell_1_1_wallet_3, state_to: wallet_sell_1_1, command: {type: 'button', arguments: ['/wallet_sell_bnb', 'BNB']}}
+        - {name: to_wallet_sell_1_1_wallet_4, state_to: wallet_sell_1_1, command: {type: 'button', arguments: ['/wallet_sell_usdt', 'USDT']}}
+        - { name: to_market_ri, state_to: market, command: { type: 'recognize_input', arguments: [ 'Маркет💵' ] } }
+        - { name: to_wallet_ri, state_to: wallet, command: { type: 'recognize_input', arguments: [ 'Кошелек💠' ] } }
+
+
+    -
+      name: wallet_sell_1_1
+      actions:
+        remember_type:
+          name: remember_caption
+          params: { var: 'wallet_order_currency' }
+      transitions:
+        - { name: to_wallet_sell_2, state_to: wallet_sell_2, command: {type: 'instant'} }
+
+    -
+      name: wallet_sell_2
+      actions:
+        send_text:
+          name: send_text
+          params:
+            clear_previous: true
+            text: >
+              Введите сумму в {{.wallet_order_currency}}, которую требуется продать
+      transitions:
+        - { name: to_wallet_sell_4, state_to: wallet_sell_4, command: {type: 'validate_wallet_order', arguments: [true]} }
+        - { name: to_wallet_sell_5, state_to: wallet_sell_5, command: {type: 'validate_wallet_order', arguments: [false]} }
+        - { name: to_market_ri, state_to: market, command: { type: 'recognize_input', arguments: [ 'Маркет💵' ] } }
+        - { name: to_wallet_ri, state_to: wallet, command: { type: 'recognize_input', arguments: [ 'Кошелек💠' ] } }
+
+    -
+      name: wallet_sell_4
+      actions:
+        remember:
+          name: remember_input
+          params: { var: 'wallet_order_sell_amount' }
+        send_text:
+          name: send_text
+          params:
+            clear_previous: true
+            text: >
+              Укажите номер карты для зачисления средств
+      transitions:
+        - { name: to_wallet_sell_6, state_to: wallet_sell_6, command: { type: 'text_input' } }
+        - { name: to_market_ri, state_to: market, command: { type: 'recognize_input', arguments: [ 'Маркет💵' ] } }
+        - { name: to_wallet_ri, state_to: wallet, command: { type: 'recognize_input', arguments: [ 'Кошелек💠' ] } }
+
+    -
+      name: wallet_sell_5
+      actions:
+        send_text:
+          name: send_text
+          params:
+            clear_previous: true
+            text: >
+              К сожалению, я не могу создать позицию на продажу. Вы указали неверную сумму продажи (сумма должна быть числом, на счету должно быть достаточно средств)
+      transitions:
+        - {name: to_st_btn2, state_to: wallet_sell_2, command: {type: 'button', arguments: ['/ws5btn2', 'Назад']}}
+        - { name: to_market_ri, state_to: market, command: { type: 'recognize_input', arguments: [ 'Маркет💵' ] } }
+        - { name: to_wallet_ri, state_to: wallet, command: { type: 'recognize_input', arguments: [ 'Кошелек💠' ] } }
+
+    -
+      name: wallet_sell_6
+      actions:
+        remember:
+          name: remember_input
+          params: { var: 'wallet_order_client_card' }
+      transitions:
+        - {name: to_wallet_sell_7, state_to: wallet_sell_7, command: {type: 'instant'}}
+
+    -
+      name: wallet_sell_7
+      actions:
+        calculate_wallet_sell_order:
+          name: calculate_wallet_sell_order
+      transitions:
+        - {name: to_wallet_sell_8, state_to: wallet_sell_8, command: {type: 'instant'}}
+
+    -
+      name: wallet_sell_8
+      actions:
+        send_text:
+          name: send_text
+          params:
+            clear_previous: true
+            text: >
+              Цена продажи: {{.wallet_order_payment_sum}} руб.
+              Для продолжения вам необходимо подтвердить сделку. Отменить действие будет нельзя.
+      transitions:
+        - {name: to_ws_9, state_to: wallet_sell_9, command: {type: 'button', arguments: ['/to_ws_9', 'Подтверждаю продажу']}}
+        - {name: to_wz_mm, state_to: main_menu, command: {type: 'button', arguments: ['/to_wz_mm', 'Отмена ❌']}}
+        - { name: to_market_ri, state_to: market, command: { type: 'recognize_input', arguments: [ 'Маркет💵' ] } }
+        - { name: to_wallet_ri, state_to: wallet, command: { type: 'recognize_input', arguments: [ 'Кошелек💠' ] } }
+
+    -
+      name: wallet_sell_9
+      actions:
+        notify_wallet_order:
+          name: notify_wallet_order
+        send_text:
+          name: send_text
+          params:
+            clear_previous: true
+            removable: false
+            text: >
+              Ваш заказ принят в обработку. Средства будут переведены в течении суток. Номер вашего заказа: {{.wallet_last_order_key}}
+      transitions:
+        - { name: to_market_ri, state_to: market, command: { type: 'recognize_input', arguments: [ 'Маркет💵' ] } }
+        - { name: to_wallet_ri, state_to: wallet, command: { type: 'recognize_input', arguments: [ 'Кошелек💠' ] } }
+
+    -
+      name: wallet_exchange_1
+      actions:
+        remember_type:
+          name: remember_caption
+          params: { var: 'wallet_order_type' }
+        send_text:
+          name: send_text
+          params:
+            clear_previous: true
+            text: >
+              Выберите валюту, которую вы хотите перевести на другой счет
+      transitions:
+        - {name: to_wallet_exchange_1_1_wallet_1, state_to: wallet_exchange_1_1, command: {type: 'button', arguments: ['/exchange_buy_btc', 'BTC']}}
+        - {name: to_wallet_exchange_1_1_wallet_2, state_to: wallet_exchange_1_1, command: {type: 'button', arguments: ['/exchange_buy_eth', 'ETH']}}
+        - {name: to_wallet_exchange_1_1_wallet_3, state_to: wallet_exchange_1_1, command: {type: 'button', arguments: ['/exchange_buy_bnb', 'BNB']}}
+        - {name: to_wallet_exchange_1_1_wallet_4, state_to: wallet_exchange_1_1, command: {type: 'button', arguments: ['/exchange_buy_usdt', 'USDT']}}
+        - { name: to_market_ri, state_to: market, command: { type: 'recognize_input', arguments: [ 'Маркет💵' ] } }
+        - { name: to_wallet_ri, state_to: wallet, command: { type: 'recognize_input', arguments: [ 'Кошелек💠' ] } }
+
+    -
+      name: wallet_exchange_1_1
+      actions:
+        remember_type:
+          name: remember_caption
+          params: { var: 'wallet_order_currency' }
+      transitions:
+        - { name: to_wallet_exchange_2, state_to: 'wallet_exchange_2', command: { type: 'instant' } }
+
+    -
+      name: wallet_exchange_2
+      actions:
+        send_text:
+          name: send_text
+          params:
+            clear_previous: true
+            text: >
+              Введите сумму в {{.wallet_order_currency}}, которую требуется перевести
+      transitions:
+        - { name: to_wallet_exchange_2_1, state_to: wallet_exhange_2_1, command: { type: 'validate_wallet_order', arguments: [ false ] } }
+        - { name: to_wallet_exchange_3, state_to: wallet_exchange_3, command: { type: 'validate_wallet_order', arguments: [ true ] } }
+        - { name: to_market_ri, state_to: market, command: { type: 'recognize_input', arguments: [ 'Маркет💵' ] } }
+        - { name: to_wallet_ri, state_to: wallet, command: { type: 'recognize_input', arguments: [ 'Кошелек💠' ] } }
+
+    -
+      name: wallet_exhange_2_1
+      actions:
+        send_text:
+          name: send_text
+          params:
+            clear_previous: true
+            text: >
+              К сожалению, я не могу создать позицию на продажу. Вы указали неверную сумму продажи (сумма должна быть числом, на счету должно быть достаточно средств)
+      transitions:
+        - {name: to_st_btn2, state_to: wallet_exchange_2, command: {type: 'button', arguments: ['/ws5btn2', 'Назад']}}
+        - { name: to_market_ri, state_to: market, command: { type: 'recognize_input', arguments: [ 'Маркет💵' ] } }
+        - { name: to_wallet_ri, state_to: wallet, command: { type: 'recognize_input', arguments: [ 'Кошелек💠' ] } }
+
+    -
+      name: wallet_exchange_3
+      actions:
+        remember_name:
+          name: remember_input
+          params: { var: 'wallet_order_exchange_amount' }
+      transitions:
+        - {name: to_wallet_exchange_4, state_to: wallet_exchange_4, command: {type: 'instant'}}
+
+    -
+      name: wallet_exchange_4
+      actions:
+        send_text:
+          name: send_text
+          params:
+            clear_previous: true
+            text: >
+              Введите адрес кошелька, на который требуется перевести средства
+      transitions:
+        - { name: to_wallet_exchange_5, state_to: wallet_exchange_5, command: { type: 'text_input' } }
+        - { name: to_market_ri, state_to: market, command: { type: 'recognize_input', arguments: [ 'Маркет💵' ] } }
+        - { name: to_wallet_ri, state_to: wallet, command: { type: 'recognize_input', arguments: [ 'Кошелек💠' ] } }
+
+    -
+      name: wallet_exchange_5
+      actions:
+        remember_name:
+          name: remember_input
+          params: { var: 'wallet_order_exchange_address' }
+      transitions:
+        - {name: to_wallet_exchange_6, state_to: wallet_exchange_6, command: {type: 'instant'}}
+
+    -
+      name: wallet_exchange_6
+      actions:
+        calculate_exchange_order:
+          name: calculate_wallet_exchange_order
+      transitions:
+        - {name: to_wallet_exchange_7, state_to: wallet_exchange_7, command: {type: 'instant'}}
+
+    -
+      name: wallet_exchange_7
+      actions:
+        send_text:
+          name: send_text
+          params:
+            clear_previous: true
+            text: >
+              Подтвердите перевод
+      transitions:
+        - {name: to_wallet_exchange_8, state_to: wallet_exchange_8, command: {type: 'button', arguments: ['/wallet_exchange_7', 'Подтвердить']}}
+        - {name: to_main_menu_wе_7, state_to: main_menu, command: {type: 'button', arguments: ['/wallet_exchange_7_cancel', 'Отмена ❌']}}
+        - { name: to_market_ri, state_to: market, command: { type: 'recognize_input', arguments: [ 'Маркет💵' ] } }
+        - { name: to_wallet_ri, state_to: wallet, command: { type: 'recognize_input', arguments: [ 'Кошелек💠' ] } }
+
+    -
+      name: wallet_exchange_8
+      actions:
+        notify_wallet_order:
+          name: notify_wallet_order
+        send_text:
+          name: send_text
+          params:
+            clear_previous: true
+            removable: false
+            text: >
+              Ваш заказ принят в обработку. Средства будут переведены в течении суток. Номер вашего заказа: {{.wallet_last_order_key}}
+      transitions:
+        - { name: to_market_ri, state_to: market, command: { type: 'recognize_input', arguments: [ 'Маркет💵' ] } }
+        - { name: to_wallet_ri, state_to: wallet, command: { type: 'recognize_input', arguments: [ 'Кошелек💠' ] } }
