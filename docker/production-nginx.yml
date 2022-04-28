@@ -1,7 +1,7 @@
 version: '3'
 services:
   webserver:
-    image: nginx:latest
+    image: nginx:mainline-alpine
     container_name: webserver
     restart: unless-stopped
     ports:
@@ -25,7 +25,7 @@ services:
       - web-root:/var/www/html
     depends_on:
       - webserver
-    command: certonly --webroot --webroot-path=/var/www/html --email moofik12@gmail.com --agree-tos --no-eff-email --staging -d spl-bck.com  -d www.spl-bck.ru
+    command: certonly --webroot --webroot-path=/var/www/html --email moofik12@gmail.com --agree-tos --no-eff-email --staging -d spl-bck.ru  -d www.spl-bck.ru
 
   web:
     image: moofik/chatbot_api:latest
