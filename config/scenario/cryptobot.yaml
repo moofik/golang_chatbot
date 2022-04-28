@@ -17,6 +17,118 @@ scenario:
           name: send_photo
           params:
             text: ./resources/1.jpg
-            #text: https://downloader.disk.yandex.ru/preview/8a132cb6029a62a4f2a0bffb00b4c98344b5bb1818a6e6f849ffe660510173af/6269d691/Gpg43VzFAyQYoco7DAAqrOudEsAG8SG3BziDymFqdelKdG6lEo3p2lIUmaewzbtNLJNjKGtHelY_Xi-KKOd-4A%3D%3D?uid=0&filename=1.jpg&disposition=inline&hash=&limit=0&content_type=image%2Fjpeg&owner_uid=0&tknv=v2&size=2048x2048
       transitions:
-        - {name: to_main_menu, state_to: start, command: {type: 'button', arguments: ['/back', 'Перейти в меню']}}
+        - {name: to_state_2_stationary, state_to: state_2_stationary, command: {type: 'button', arguments: ['/next', 'Начать']}}
+
+    -
+      name: state_2_stationary
+      actions:
+        remember_var_1:
+          name: remember_var
+          params: { var: 'market_order_currency', value: 'BTC' }
+      transitions:
+        - {name: to_state_2_stationary_2, state_to: state_2_stationary_2, command: {type: 'instant'}}
+
+    -
+      name: state_2_stationary_2
+      actions:
+        remember_var_2:
+          name: remember_var
+          params: { var: 'market_order_type', value: 'Купить' }
+      transitions:
+        - {name: to_state_2, state_to: state_2, command: {type: 'instant'}}
+
+    -
+      name: state_2
+      actions:
+        send_text:
+          name: send_photo
+          params:
+            text: ./resources/2.jpg
+      transitions:
+        - { name: to_state_3_1, state_to: state_3, command: { type: 'button', arguments: [ '/next1', 'Сбербанк' ] } }
+        - { name: to_state_3_2, state_to: state_3, command: { type: 'button', arguments: [ '/next2', 'Тинькофф' ] } }
+        - { name: to_state_3_3, state_to: state_3, command: { type: 'button', arguments: [ '/next3', 'QIWI-кошелек' ] } }
+        - { name: to_state_3_4, state_to: state_3, command: { type: 'button', arguments: [ '/next4', 'SIM-карта' ] } }
+
+    -
+      name: state_3
+      actions:
+        remember_type:
+          name: remember_caption
+          params: { var: 'market_payment_through' }
+        send_text:
+          name: send_photo
+          params:
+            text: ./resources/3.jpg
+      transitions:
+        - { name: to_state_4, state_to: state_4, command: { type: 'text_input' } }
+
+    -
+      name: state_4
+      actions:
+        remember_name:
+          name: remember_input
+          params: { var: 'market_order_buy_amount' }
+        send_text:
+          name: send_photo
+          params:
+            text: ./resources/4.jpg
+      transitions:
+        - { name: to_state_4_remember_address, state_to: state_4_remember_address, command: { type: 'text_input' } }
+
+    -
+      name: state_4_remember_address
+      actions:
+        remember_name:
+          name: remember_input
+          params: { var: 'market_order_buy_address' }
+      transitions:
+        - {name: to_state_4_calculate_order, state_to: state_4_calculate_order, command: {type: 'instant'}}
+
+    -
+      name: state_4_calculate_order
+      actions:
+        calculate_market_buy_order:
+          name: calculate_market_buy_order
+      transitions:
+        - {name: to_state_5, state_to: state_5, command: {type: 'instant'}}
+
+    -
+      name: state_5
+      actions:
+        send_text:
+          name: send_photo
+          params:
+            text: ./resources/5.jpg
+      transitions:
+        - { name: to_state_6_1, state_to: state_6, command: { type: 'button', arguments: [ '/next1', 'Произвести оплату' ] } }
+        - { name: to_state_5_cancel, state_to: state_5_cancel, command: { type: 'button', arguments: [ '/next2', 'Отменить' ] } }
+
+    -
+      name: state_5_cancel
+      actions:
+        cancel_order_data:
+          name: cancel_order_data
+      transitions:
+        - {name: to_start, state_to: start, command: {type: 'instant'}}
+
+    -
+      name: state_6
+      actions:
+        confirm_market_order:
+          name: confirm_market_order
+        send_text:
+          name: send_photo
+          params:
+            text: ./resources/6.jpg
+      transitions:
+        - {name: to_state_6_clear_data, state_to: state_6_clear_data, command: {type: 'button', arguments: ['/next', 'Оформить новый заказ']}}
+
+    -
+      name: state_6_clear_data
+      actions:
+        cancel_order_data:
+          name: cancel_order_data
+      transitions:
+        - {name: to_start, state_to: start, command: {type: 'instant'}}

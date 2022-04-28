@@ -15,6 +15,7 @@ type Order struct {
 	Currency       string
 	BuyAmount      float64
 	BuyAddress     string
+	PaymentThrough string
 	SellAmount     float64
 	SellCard       string
 	PaymentSum     float64

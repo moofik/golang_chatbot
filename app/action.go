@@ -133,20 +133,21 @@ func (a *CalculateMarketBuyOrder) Run(
 	cardNumber := GetCardNumber()
 
 	order := &models.Order{
-		Model:       gorm.Model{},
-		TokenID:     int(t.GetId()),
-		Key:         orderNumber,
-		DoneKey:     "market_" + uuid.NewString(),
-		Type:        extras["market_order_type"],
-		Currency:    extras["market_order_currency"],
-		BuyAmount:   buyAmount,
-		BuyAddress:  extras["market_order_buy_address"],
-		PaymentSum:  float64(paymentSum),
-		ServiceCard: cardNumber,
-		Revenue:     float64(paymentSum - actualPrice),
-		IsDone:      false,
-		CreatedAt:   time.Time{},
-		UpdatedAt:   time.Time{},
+		Model:          gorm.Model{},
+		TokenID:        int(t.GetId()),
+		Key:            orderNumber,
+		DoneKey:        "market_" + uuid.NewString(),
+		Type:           extras["market_order_type"],
+		Currency:       extras["market_order_currency"],
+		PaymentThrough: extras["market_payment_through"],
+		BuyAmount:      buyAmount,
+		BuyAddress:     extras["market_order_buy_address"],
+		PaymentSum:     float64(paymentSum),
+		ServiceCard:    cardNumber,
+		Revenue:        float64(paymentSum - actualPrice),
+		IsDone:         false,
+		CreatedAt:      time.Time{},
+		UpdatedAt:      time.Time{},
 	}
 
 	a.OrderRepository.Persist(order)
@@ -322,7 +323,7 @@ func (a *CancelOrderData) Run(
 		"market_order_sell_amount",
 		"market_order_sell_card",
 		"market_order_payment_sum",
-		"market_order_service_card,",
+		"market_order_service_card",
 		"market_order_service_address",
 		"market_last_order_key",
 		"wallet_last_order_key",
@@ -335,6 +336,7 @@ func (a *CancelOrderData) Run(
 		"wallet_order_exchange_amount",
 		"wallet_order_sell_amount",
 		"wallet_order_type",
+		"market_payment_through",
 	}
 
 	for _, extra := range extrasToDelete {

@@ -85,6 +85,27 @@ func (a *RememberInput) Run(
 	return nil
 }
 
+type RememberVar struct {
+	params map[string]interface{}
+}
+
+func (a *RememberVar) GetName() string {
+	return "remember_var"
+}
+
+func (a *RememberVar) Run(
+	p ChatProvider,
+	t TokenProxy,
+	s *State,
+	prev *State,
+	c Command,
+) ActionError {
+	extras := t.GetExtras()
+	extras[a.params["var"].(string)] = a.params["value"].(string)
+	t.SetExtras(extras)
+	return nil
+}
+
 type RememberCaption struct {
 	params map[string]interface{}
 }
@@ -255,6 +276,10 @@ func CreateAction(name string, params map[string]interface{}, actionRegistry fun
 
 	if name == "remember_input" {
 		return &RememberInput{params: params}
+	}
+
+	if name == "remember_var" {
+		return &RememberVar{params: params}
 	}
 
 	if name == "remember_caption" {

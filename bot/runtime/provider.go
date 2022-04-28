@@ -361,79 +361,45 @@ func createForm(form map[string]string) (string, io.Reader, error) {
 }
 
 func (p *TelegramProvider) SendLocalPhoto(buttons []string, path string, ctx ProviderContext) error {
-	//buf := new(bytes.Buffer)
-	//w := multipart.NewWriter(buf)
-	//
-	//chatId, err := w.CreateFormField("chat_id")
-	//if err != nil {
-	//	return err
-	//}
-	//bs := make([]byte, 4)
-	//binary.LittleEndian.PutUint32(bs, 131231613)
-	//w.WriteField("input1", "value1")
-	//chatId.Write(bs)
-	//
-	//cmdButtons := ctx.State.TransitionStorage.AllButtonCommands()
-	//var cmdButtonsSlice [][]map[string]string
-	//
-	//for _, button := range cmdButtons {
-	//	cmdButtonsSlice = append(cmdButtonsSlice, []map[string]string{
-	//		{
-	//			"text":          button.GetCaption(),
-	//			"callback_data": button.GetInput(),
-	//		},
-	//	})
-	//}
-	//
-	//var buttonsSlice [][]map[string]string
-	//buttonsSlice = append(buttonsSlice, []map[string]string{})
-	//
-	//for _, button := range buttons {
-	//	buttonsSlice[0] = append(buttonsSlice[0], map[string]string{
-	//		"text": button,
-	//	})
-	//}
-	//
-	//var structReplyMarkup TelegramReplyMarkup
-	//
-	//if len(buttonsSlice) > 0 {
-	//	if len(buttons) > 0 {
-	//		structReplyMarkup = TelegramReplyMarkup{
-	//			Keyboard:       buttonsSlice,
-	//			ResizeKeyboard: true,
-	//		}
-	//	} else {
-	//		structReplyMarkup = TelegramReplyMarkup{
-	//			InlineKeyboard: cmdButtonsSlice,
-	//		}
-	//	}
-	//}
+	cmdButtons := ctx.State.TransitionStorage.AllButtonCommands()
+	var cmdButtonsSlice [][]map[string]string
 
-	//_, err := json.Marshal(structReplyMarkup)
-	//_, _ = w.CreateFormField("reply_markup")
-	//if err != nil {
-	//	return err
-	//}
-	//replyMarkup.Write(b)
+	for _, button := range cmdButtons {
+		cmdButtonsSlice = append(cmdButtonsSlice, []map[string]string{
+			{
+				"text":          button.GetCaption(),
+				"callback_data": button.GetInput(),
+			},
+		})
+	}
 
-	form := map[string]string{"chat_id": "131231613", "photo": "@./resources/1.jpg"}
+	var buttonsSlice [][]map[string]string
+	buttonsSlice = append(buttonsSlice, []map[string]string{})
+
+	for _, button := range buttons {
+		buttonsSlice[0] = append(buttonsSlice[0], map[string]string{
+			"text": button,
+		})
+	}
+
+	var structReplyMarkup TelegramReplyMarkup
+
+	if len(buttonsSlice) > 0 {
+		if len(buttons) > 0 {
+			structReplyMarkup = TelegramReplyMarkup{
+				Keyboard:       buttonsSlice,
+				ResizeKeyboard: true,
+			}
+		} else {
+			structReplyMarkup = TelegramReplyMarkup{
+				InlineKeyboard: cmdButtonsSlice,
+			}
+		}
+	}
+
+	replyMarkup, err := json.Marshal(structReplyMarkup)
+	form := map[string]string{"chat_id": "131231613", "photo": "@" + path, "reply_markup": string(replyMarkup)}
 	ct, body, err := createForm(form)
-
-	//fw, err := w.CreateFormFile("photo", path)
-	//if err != nil {
-	//	return err
-	//}
-	//fd, err := os.Open(path)
-	//if err != nil {
-	//	return err
-	//}
-	//defer fd.Close()
-	//
-	//_, err = io.Copy(fw, fd)
-	//if err != nil {
-	//	return err
-	//}
-	//w.Close()
 
 	url := "https://api.telegram.org/bot" + p.GetConfig().Token + "/sendPhoto"
 
@@ -442,14 +408,14 @@ func (p *TelegramProvider) SendLocalPhoto(buttons []string, path string, ctx Pro
 		ct,
 		body,
 	)
-	bodyBytes, err := io.ReadAll(res.Body)
-	if err != nil {
-		log.Fatal(err)
-	}
-	bodyString := string(bodyBytes)
-	fmt.Println("\n\n\n\nRES:\n")
-	fmt.Println(bodyString)
-	fmt.Println("\n\n\n")
+	//bodyBytes, err := io.ReadAll(res.Body)
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//bodyString := string(bodyBytes)
+	//fmt.Println("\n\n\n\nRES:\n")
+	//fmt.Println(bodyString)
+	//fmt.Println("\n\n\n")
 	defer res.Body.Close()
 
 	if err != nil {
