@@ -1,0 +1,82 @@
+version: '3'
+services:
+  webserver:
+    image: nginx:mainline-alpine
+    container_name: webserver
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - web-root:/var/www/html
+      - ./nginx-conf:/etc/nginx/conf.d
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+    depends_on:
+      - web
+    networks:
+      - crypto
+
+  certbot:
+    image: certbot/certbot
+    container_name: certbot
+    volumes:
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+      - web-root:/var/www/html
+    depends_on:
+      - webserver
+    command: certonly --webroot --webroot-path=/var/www/html --email moofik12@gmail.com --agree-tos --no-eff-email --staging -d spl-bck.com  -d www.spl-bck.ru
+
+  web:
+    image: moofik/chatbot_api:latest
+    restart: always
+    container_name: web
+    environment:
+      DB_HOST: db
+      DB_USERNAME: crypto
+      DB_PASSWORD: crypto
+      DB_DATABASE: crypto
+    ports:
+      - "8181:8181"
+    volumes:
+      - ./:/var/run/docker.sock
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik-router.entrypoints=websecure"
+      - "traefik.http.routers.traefik-router.rule=Host(`spl-bck.ru`)"
+      - "traefik.http.routers.traefik-router.tls.certresolver=letsencrypt"
+    networks:
+      - crypto
+    depends_on:
+      - db
+
+  db:
+    build: postgres
+    image: crypto/postgresql
+    container_name: db
+    environment:
+      POSTGRES_PASSWORD: example
+    volumes:
+      - "./volumes/pgdata:/var/lib/postgresql/data"
+      - "./volumes/data:/opt/data"
+    tmpfs:
+      - /run
+      - /tmp
+    ports:
+      - "5432:5432"
+    networks:
+      - crypto
+
+volumes:
+  certbot-etc:
+  certbot-var:
+  web-root:
+    driver: local
+    driver_opts:
+      type: none
+      device: ./../resources
+      o: bind
+
+networks:
+  crypto:
+    external: true
