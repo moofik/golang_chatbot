@@ -202,7 +202,7 @@ func (a *SendReplyMarkup) Run(
 }
 
 type SendPhoto struct {
-	params map[string]interface{}
+	Params map[string]interface{}
 }
 
 func (a *SendPhoto) GetName() string {
@@ -216,7 +216,7 @@ func (a *SendPhoto) Run(
 	prev *State,
 	c Command,
 ) ActionError {
-	tmpl, err := template.New("test").Parse(a.params["text"].(string))
+	tmpl, err := template.New("test").Parse(a.Params["text"].(string))
 	if err != nil {
 		return &GenericActionError{InnerError: err}
 	}
@@ -231,8 +231,8 @@ func (a *SendPhoto) Run(
 
 	var buttons []string
 
-	if a.params["buttons"] != nil {
-		rawButtons := a.params["buttons"].([]interface{})
+	if a.Params["buttons"] != nil {
+		rawButtons := a.Params["buttons"].([]interface{})
 		buttons = make([]string, len(rawButtons))
 
 		for _, button := range rawButtons {
@@ -252,10 +252,10 @@ func (a *SendPhoto) Run(
 		return &GenericActionError{InnerError: err}
 	}
 
-	if clear, ok := a.params["clear_previous"]; ok && clear.(bool) && t.GetIsLastBotMessageRemovable() {
+	if clear, ok := a.Params["clear_previous"]; ok && clear.(bool) && t.GetIsLastBotMessageRemovable() {
 		DeleteMessage(t.GetChatId(), lastBotMessageId, p.GetConfig().Token)
 
-		if removable, ok := a.params["removable"]; ok && !removable.(bool) {
+		if removable, ok := a.Params["removable"]; ok && !removable.(bool) {
 			t.SetIsLastBotMessageRemovable(false)
 		} else {
 			t.SetIsLastBotMessageRemovable(true)
@@ -291,7 +291,7 @@ func CreateAction(name string, params map[string]interface{}, actionRegistry fun
 	}
 
 	if name == "send_photo" {
-		return &SendPhoto{params: params}
+		return &SendPhoto{Params: params}
 	}
 
 	if actionRegistry != nil {

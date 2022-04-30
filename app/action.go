@@ -1,15 +1,18 @@
 package app
 
 import (
+	"bot-daedalus/app/utils"
 	"bot-daedalus/bot/runtime"
 	"bot-daedalus/models"
 	"bytes"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 	"html/template"
+	"image/color"
 	"net/http"
 	"strconv"
 	"strings"
@@ -97,6 +100,56 @@ func (ar *ActionRegistry) ActionRegistryHandler(name string, params map[string]i
 			WalletOrderRepository: &models.WalletOrderRepository{DB: ar.DB},
 			OrderRepository:       &models.OrderRepository{DB: ar.DB},
 		}
+	}
+
+	if name == "send_labeled_photo" {
+		return &SendLabeledPhoto{}
+	}
+
+	return nil
+}
+
+type SendLabeledPhoto struct {
+}
+
+func (a *SendLabeledPhoto) GetName() string {
+	return "send_labeled_photo"
+}
+
+func (a *SendLabeledPhoto) Run(
+	p runtime.ChatProvider,
+	t runtime.TokenProxy,
+	s *runtime.State,
+	prev *runtime.State,
+	c runtime.Command,
+) runtime.ActionError {
+	extras := t.GetExtras()
+	newFileName := "./resources/" + extras["market_last_order_key"] + ".jpg"
+
+	utils.LabelImage(
+		"./resources/5.jpg",
+		newFileName,
+		extras["market_payment_through"],
+		extras["market_order_buy_amount"]+" "+extras["market_order_currency"],
+		extras["market_order_payment_sum"]+" руб.",
+		extras["market_order_buy_address"],
+		&utils.Options{
+			flag.Float64("dpi", 72, "screen resolution in Dots Per Inch"),
+			flag.Float64("size", 42, "font size in points"),
+			flag.String("fontfile", "./resources/geometria-bolditalic.ttf", "filename of the ttf font"),
+			color.RGBA{103, 103, 103, 255},
+		},
+	)
+
+	params := map[string]interface{}{
+		"text": newFileName,
+	}
+
+	sendPhoto := &runtime.SendPhoto{params}
+	err := sendPhoto.Run(p, t, s, prev, c)
+
+	if err != nil {
+		fmt.Println(err.Error())
 	}
 
 	return nil

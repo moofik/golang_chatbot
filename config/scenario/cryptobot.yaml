@@ -98,9 +98,7 @@ scenario:
       name: state_5
       actions:
         send_text:
-          name: send_photo
-          params:
-            text: ./resources/5.jpg
+          name: send_labeled_photo
       transitions:
         - { name: to_state_6_1, state_to: state_6, command: { type: 'button', arguments: [ '/next1', 'Произвести оплату' ] } }
         - { name: to_state_5_cancel, state_to: state_5_cancel, command: { type: 'button', arguments: [ '/next2', 'Отменить' ] } }
