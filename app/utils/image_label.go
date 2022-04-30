@@ -17,9 +17,9 @@ import (
 )
 
 type Options struct {
-	Dpi       *float64
-	Size      *float64
-	Fontfile  *string
+	Dpi       float64
+	Size      float64
+	Fontfile  string
 	TextColor color.RGBA
 }
 
@@ -48,7 +48,7 @@ func writePaymentThrough(d *font.Drawer, str string) {
 func writeBuyAmount(d *font.Drawer, str string) {
 	d.Dot = fixed.Point26_6{
 		X: fixed.I(830),
-		Y: fixed.I(610),
+		Y: fixed.I(605),
 	}
 
 	d.DrawString(str)
@@ -57,7 +57,7 @@ func writeBuyAmount(d *font.Drawer, str string) {
 func writePaymentSum(d *font.Drawer, str string) {
 	d.Dot = fixed.Point26_6{
 		X: fixed.I(830),
-		Y: fixed.I(695),
+		Y: fixed.I(685),
 	}
 
 	d.DrawString(str)
@@ -66,7 +66,7 @@ func writePaymentSum(d *font.Drawer, str string) {
 func writePaymentAddress(d *font.Drawer, str string) {
 	d.Dot = fixed.Point26_6{
 		X: fixed.I(830),
-		Y: fixed.I(770),
+		Y: fixed.I(765),
 	}
 
 	d.DrawString(str)
@@ -75,7 +75,7 @@ func writePaymentAddress(d *font.Drawer, str string) {
 func LabelImage(openFileName string, outputFileName string, through string, buyAmt string, paymentSum string, paymentAddr string, options *Options) {
 	flag.Parse()
 
-	fontBytes, err := ioutil.ReadFile(*options.Fontfile)
+	fontBytes, err := ioutil.ReadFile(options.Fontfile)
 	if err != nil {
 		log.Println(err)
 		return
@@ -94,8 +94,8 @@ func LabelImage(openFileName string, outputFileName string, through string, buyA
 		Dst: rgba,
 		Src: fg,
 		Face: truetype.NewFace(f, &truetype.Options{
-			Size:    *options.Size,
-			DPI:     *options.Dpi,
+			Size:    options.Size,
+			DPI:     options.Dpi,
 			Hinting: font.HintingNone,
 		}),
 	}

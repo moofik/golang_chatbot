@@ -6,7 +6,6 @@ import (
 	"bot-daedalus/models"
 	"bytes"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -134,9 +133,9 @@ func (a *SendLabeledPhoto) Run(
 		extras["market_order_payment_sum"]+" руб.",
 		extras["market_order_buy_address"],
 		&utils.Options{
-			flag.Float64("dpi", 72, "screen resolution in Dots Per Inch"),
-			flag.Float64("size", 42, "font size in points"),
-			flag.String("fontfile", "./resources/geometria-bolditalic.ttf", "filename of the ttf font"),
+			72,
+			42,
+			"./resources/geometria-bolditalic.ttf",
 			color.RGBA{103, 103, 103, 255},
 		},
 	)
