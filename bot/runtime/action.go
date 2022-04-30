@@ -242,11 +242,68 @@ func (a *SendPhoto) Run(
 
 	lastBotMessageId := uint(t.GetLastBotMessageId())
 	result := tpl.String()
+
+	var replyMarkup *TelegramReplyMarkup
+
+	if a.Params["remove_keyboard"].(bool) == true {
+		replyMarkup = &TelegramReplyMarkup{RemoveKeyboard: true}
+	}
+
 	err = p.SendLocalPhoto(buttons, result, ProviderContext{
 		State:   s,
 		Command: c,
 		Token:   t,
-	})
+	}, replyMarkup)
+
+	if err != nil {
+		return &GenericActionError{InnerError: err}
+	}
+
+	if clear, ok := a.Params["clear_previous"]; ok && clear.(bool) && t.GetIsLastBotMessageRemovable() {
+		DeleteMessage(t.GetChatId(), lastBotMessageId, p.GetConfig().Token)
+
+		if removable, ok := a.Params["removable"]; ok && !removable.(bool) {
+			t.SetIsLastBotMessageRemovable(false)
+		} else {
+			t.SetIsLastBotMessageRemovable(true)
+		}
+	} else {
+		t.SetIsLastBotMessageRemovable(true)
+	}
+
+	t.SetIsLastBotMessageRemovable(false)
+
+	return nil
+}
+
+type SendChatAction struct {
+	Params map[string]interface{}
+}
+
+func (a *SendChatAction) GetName() string {
+	return "send_chat_action"
+}
+
+func (a *SendChatAction) Run(
+	p ChatProvider,
+	t TokenProxy,
+	s *State,
+	prev *State,
+	c Command,
+) ActionError {
+	action := a.Params["action"].(string)
+	lastBotMessageId := uint(t.GetLastBotMessageId())
+	var replyMarkup *TelegramReplyMarkup
+
+	if a.Params["remove_keyboard"].(bool) == true {
+		replyMarkup = &TelegramReplyMarkup{RemoveKeyboard: a.Params["remove_keyboard"].(bool)}
+	}
+
+	err := p.SendChatAction(action, ProviderContext{
+		State:   s,
+		Command: c,
+		Token:   t,
+	}, replyMarkup)
 
 	if err != nil {
 		return &GenericActionError{InnerError: err}
@@ -292,6 +349,10 @@ func CreateAction(name string, params map[string]interface{}, actionRegistry fun
 
 	if name == "send_photo" {
 		return &SendPhoto{Params: params}
+	}
+
+	if name == "send_chat_action" {
+		return &SendChatAction{Params: params}
 	}
 
 	if actionRegistry != nil {

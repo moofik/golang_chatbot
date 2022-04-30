@@ -49,6 +49,7 @@ type TelegramReplyMarkup struct {
 	InlineKeyboard [][]map[string]string `json:"inline_keyboard,omitempty"`
 	Keyboard       [][]map[string]string `json:"keyboard,omitempty"`
 	ResizeKeyboard bool                  `json:"resize_keyboard,omitempty"`
+	RemoveKeyboard bool                  `json:"remove_keyboard,omitempty"`
 }
 
 type TelegramOutgoingMessage struct {

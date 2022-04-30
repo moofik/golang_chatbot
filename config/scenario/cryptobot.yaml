@@ -61,6 +61,7 @@ scenario:
           name: send_photo
           params:
             text: ./resources/3.jpg
+            remove_keyboard: true
       transitions:
         - { name: to_state_4, state_to: state_4, command: { type: 'text_input' } }
 

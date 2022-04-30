@@ -10,6 +10,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -28,8 +29,8 @@ type ChatProvider interface {
 	GetTokenRepository() TokenRepository
 	SendTextMessage(text string, ctx ProviderContext) error
 	SendMarkupMessage(buttons []string, text string, ctx ProviderContext) error
-	SendPhoto(buttons []string, text string, ctx ProviderContext) error
-	SendLocalPhoto(buttons []string, path string, ctx ProviderContext) error
+	SendLocalPhoto(buttons []string, path string, ctx ProviderContext, markup *TelegramReplyMarkup) error
+	SendChatAction(action string, ctx ProviderContext, markup *TelegramReplyMarkup) error
 }
 
 type TelegramSendMessageResponse struct {
@@ -258,84 +259,6 @@ func (p *TelegramProvider) SendMarkupMessage(buttons []string, text string, ctx 
 	return nil
 }
 
-func (p *TelegramProvider) SendPhoto(buttons []string, text string, ctx ProviderContext) error {
-	cmdButtons := ctx.State.TransitionStorage.AllButtonCommands()
-	var cmdButtonsSlice [][]map[string]string
-
-	for _, button := range cmdButtons {
-		cmdButtonsSlice = append(cmdButtonsSlice, []map[string]string{
-			{
-				"text":          button.GetCaption(),
-				"callback_data": button.GetInput(),
-			},
-		})
-	}
-
-	var buttonsSlice [][]map[string]string
-	buttonsSlice = append(buttonsSlice, []map[string]string{})
-
-	for _, button := range buttons {
-		buttonsSlice[0] = append(buttonsSlice[0], map[string]string{
-			"text": button,
-		})
-	}
-
-	reqBody := &TelegramPhotoMessage{
-		ChatID:    p.GetToken().GetChatId(),
-		Photo:     text,
-		ParseMode: "HTML",
-	}
-
-	if len(buttonsSlice) > 0 {
-		if len(buttons) > 0 {
-			reqBody.ReplyMarkup = TelegramReplyMarkup{
-				Keyboard:       buttonsSlice,
-				ResizeKeyboard: true,
-			}
-		} else {
-			reqBody.ReplyMarkup = TelegramReplyMarkup{
-				InlineKeyboard: cmdButtonsSlice,
-			}
-		}
-	}
-
-	reqBytes, err := json.Marshal(reqBody)
-
-	if err != nil {
-		return err
-	}
-
-	url := "https://api.telegram.org/bot" + p.GetConfig().Token + "/sendPhoto"
-
-	res, err := http.Post(
-		url,
-		"application/json",
-		bytes.NewBuffer(reqBytes),
-	)
-	defer res.Body.Close()
-
-	if err != nil {
-		fmt.Println(err.Error())
-		return err
-	}
-
-	if res.StatusCode == http.StatusOK {
-		bodyBytes, err := io.ReadAll(res.Body)
-		if err != nil {
-			log.Fatal(err)
-		}
-		bodyString := string(bodyBytes)
-		sendMsgRes := GetTelegramSendMessageResponse(bodyString)
-		ctx.Token.SetLastBotMessageId(sendMsgRes.Result.MessageID)
-	}
-
-	if res.StatusCode != http.StatusOK {
-		return errors.New("unexpected status" + res.Status)
-	}
-
-	return nil
-}
-
 func createForm(form map[string]string) (string, io.Reader, error) {
 	body := new(bytes.Buffer)
 	mp := multipart.NewWriter(body)
@@ -360,7 +283,7 @@ func createForm(form map[string]string) (string, io.Reader, error) {
 	return mp.FormDataContentType(), body, nil
 }
 
-func (p *TelegramProvider) SendLocalPhoto(buttons []string, path string, ctx ProviderContext) error {
+func (p *TelegramProvider) SendLocalPhoto(buttons []string, path string, ctx ProviderContext, markup *TelegramReplyMarkup) error {
 	cmdButtons := ctx.State.TransitionStorage.AllButtonCommands()
 	var cmdButtonsSlice [][]map[string]string
 
@@ -384,7 +307,14 @@ func (p *TelegramProvider) SendLocalPhoto(buttons []string, path string, ctx Pro
 
 	var structReplyMarkup TelegramReplyMarkup
 
-	if len(buttonsSlice) > 0 {
+	if markup != nil {
+		structReplyMarkup = TelegramReplyMarkup{
+			markup.InlineKeyboard,
+			markup.Keyboard,
+			markup.ResizeKeyboard,
+			markup.RemoveKeyboard,
+		}
+	} else if len(buttonsSlice) > 0 {
 		if len(buttons) > 0 {
 			structReplyMarkup = TelegramReplyMarkup{
 				Keyboard:       buttonsSlice,
@@ -398,7 +328,7 @@ func (p *TelegramProvider) SendLocalPhoto(buttons []string, path string, ctx Pro
 	}
 
 	replyMarkup, err := json.Marshal(structReplyMarkup)
-	form := map[string]string{"chat_id": "131231613", "photo": "@" + path, "reply_markup": string(replyMarkup)}
+	form := map[string]string{"chat_id": strconv.Itoa(int(ctx.Token.GetChatId())), "photo": "@" + path, "reply_markup": string(replyMarkup)}
 	ct, body, err := createForm(form)
 
 	url := "https://api.telegram.org/bot" + p.GetConfig().Token + "/sendPhoto"
@@ -435,6 +365,59 @@ func (p *TelegramProvider) SendLocalPhoto(buttons []string, path string, ctx Pro
 
 	if res.StatusCode != http.StatusOK {
 		return errors.New("unexpected status" + res.Status)
+	}
+
+	return nil
+}
+
+func (p *TelegramProvider) SendChatAction(action string, ctx ProviderContext, markup *TelegramReplyMarkup) error {
+
+	form := map[string]string{"chat_id": strconv.Itoa(int(ctx.Token.GetChatId())), "action": action}
+
+	if markup != nil {
+		replyMarkup, err := json.Marshal(markup)
+
+		if err != nil {
+			fmt.Println("CANT SEND CHAT ACTION MEESAGE %v", err.Error())
+		}
+
+		form["reply_markup"] = string(replyMarkup)
+	}
+
+	ct, body, err := createForm(form)
+
+	url := "https://api.telegram.org/bot" + p.GetConfig().Token + "/sendChatAction"
+
+	res, err := http.Post(
+		url,
+		ct,
+		body,
+	)
+	defer res.Body.Close()
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return err
+	}
+
+	if res.StatusCode == http.StatusOK {
+		bodyBytes, err := io.ReadAll(res.Body)
+		if err != nil {
+			panic(err.Error())
+		}
+		bodyString := string(bodyBytes)
+		sendMsgRes := GetTelegramSendMessageResponse(bodyString)
+		ctx.Token.SetLastBotMessageId(sendMsgRes.Result.MessageID)
+	}
+
+	if res.StatusCode != http.StatusOK {
+		bodyBytes, err := io.ReadAll(res.Body)
+		if err != nil {
+			panic(err.Error())
+		}
+		bodyString := string(bodyBytes)
+		panic(bodyString)
+		//return errors.New("unexpected status" + res.Status)
 	}
 
 	return nil
