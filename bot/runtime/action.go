@@ -245,7 +245,7 @@ func (a *SendPhoto) Run(
 
 	var replyMarkup *TelegramReplyMarkup
 
-	if a.Params["remove_keyboard"].(bool) == true {
+	if removeKeyboard, ok := a.Params["remove_keyboard"]; ok && removeKeyboard.(bool) == true {
 		replyMarkup = &TelegramReplyMarkup{RemoveKeyboard: true}
 	}
 
@@ -295,8 +295,8 @@ func (a *SendChatAction) Run(
 	lastBotMessageId := uint(t.GetLastBotMessageId())
 	var replyMarkup *TelegramReplyMarkup
 
-	if a.Params["remove_keyboard"].(bool) == true {
-		replyMarkup = &TelegramReplyMarkup{RemoveKeyboard: a.Params["remove_keyboard"].(bool)}
+	if removeKeyboard, ok := a.Params["remove_keyboard"]; ok && removeKeyboard.(bool) == true {
+		replyMarkup = &TelegramReplyMarkup{RemoveKeyboard: true}
 	}
 
 	err := p.SendChatAction(action, ProviderContext{
@@ -326,9 +326,79 @@ func (a *SendChatAction) Run(
 	return nil
 }
 
+type SendDocument struct {
+	Params map[string]interface{}
+}
+
+func (a *SendDocument) GetName() string {
+	return "send_document"
+}
+
+func (a *SendDocument) Run(
+	p ChatProvider,
+	t TokenProxy,
+	s *State,
+	prev *State,
+	c Command,
+) ActionError {
+	path := a.Params["text"].(string)
+	lastBotMessageId := uint(t.GetLastBotMessageId())
+	var replyMarkup *TelegramReplyMarkup
+	caption := ""
+
+	if removeKeyboard, ok := a.Params["remove_keyboard"]; ok && removeKeyboard.(bool) == true {
+		replyMarkup = &TelegramReplyMarkup{RemoveKeyboard: true}
+	}
+
+	if cpt, ok := a.Params["caption"]; ok {
+		caption = cpt.(string)
+	}
+
+	var buttons []string
+
+	if a.Params["buttons"] != nil {
+		rawButtons := a.Params["buttons"].([]interface{})
+		buttons = make([]string, len(rawButtons))
+
+		for _, button := range rawButtons {
+			buttons = append(buttons, button.(string))
+		}
+	}
+
+	err := p.SendDocument(buttons, path, caption, ProviderContext{
+		State:   s,
+		Command: c,
+		Token:   t,
+	}, replyMarkup)
+
+	if err != nil {
+		return &GenericActionError{InnerError: err}
+	}
+
+	if clear, ok := a.Params["clear_previous"]; ok && clear.(bool) && t.GetIsLastBotMessageRemovable() {
+		DeleteMessage(t.GetChatId(), lastBotMessageId, p.GetConfig().Token)
+
+		if removable, ok := a.Params["removable"]; ok && !removable.(bool) {
+			t.SetIsLastBotMessageRemovable(false)
+		} else {
+			t.SetIsLastBotMessageRemovable(true)
+		}
+	} else {
+		t.SetIsLastBotMessageRemovable(true)
+	}
+
+	t.SetIsLastBotMessageRemovable(false)
+
+	return nil
+}
+
 func CreateAction(name string, params map[string]interface{}, actionRegistry func(string, map[string]interface{}) Action) Action {
 	if name == "send_text" {
 		return &SendTextMessage{params: params}
+	}
+
+	if name == "send_document" {
+		return &SendDocument{Params: params}
 	}
 
 	if name == "remember_input" {

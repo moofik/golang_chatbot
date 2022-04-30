@@ -2,7 +2,7 @@ scenario:
   name: cryptobot
   provider:
     name: telegram
-    token: '2117926131:AAF7tpRWkO1a4qhdjorbGCdfAHAfs8jCV7o' #'2067097332:AAEHszUM1n1Dfrut0_XY_C3YAbiH_KI_Qas' #
+    token: '5327386629:AAF-QIZ4i4TWlW0-OABXEtzz9Qp6pRGe2RY' #'2067097332:AAEHszUM1n1Dfrut0_XY_C3YAbiH_KI_Qas' #
 
   states:
     -
@@ -12,6 +12,19 @@ scenario:
 
     -
       name: start
+      actions:
+        send_text:
+          name: send_document
+          params:
+            text: ./resources/agreement.docx
+            caption: >
+              Пожалуйста, ознакомьтесь с условиями пользования ботом.
+              По вопросам обращайтесь в поддержку: @puls_help
+      transitions:
+        - {name: to_start_2, state_to: start_2, command: {type: 'button', arguments: ['/next', 'Подтвердить']}}
+
+    -
+      name: start_2
       actions:
         send_text:
           name: send_photo
@@ -110,7 +123,7 @@ scenario:
         cancel_order_data:
           name: cancel_order_data
       transitions:
-        - {name: to_start, state_to: start, command: {type: 'instant'}}
+        - {name: to_start_2, state_to: start_2, command: {type: 'instant'}}
 
     -
       name: state_6
@@ -130,4 +143,4 @@ scenario:
         cancel_order_data:
           name: cancel_order_data
       transitions:
-        - {name: to_start, state_to: start, command: {type: 'instant'}}
+        - {name: to_start_2, state_to: start_2, command: {type: 'instant'}}
