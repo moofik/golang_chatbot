@@ -58,7 +58,7 @@ func main() {
 
 	healthcheckHandler := func(c *gin.Context) {
 		c.JSON(200, gin.H{
-			"message": "service is working",
+			"message": "service is working (ver. 1.1)",
 		})
 	}
 
