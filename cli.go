@@ -12,7 +12,7 @@ import (
 	"strconv"
 )
 
-func main() {
+func cli() {
 	err := godotenv.Load()
 
 	dsn := fmt.Sprintf(

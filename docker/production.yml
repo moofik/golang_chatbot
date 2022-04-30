@@ -20,7 +20,7 @@ services:
       - crypto
 
   web:
-    image: moofik/chatbot_api:smirk
+    image: moofik/chatbot_api:latest
     restart: always
     container_name: web
     environment:
