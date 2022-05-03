@@ -72,7 +72,66 @@ func writePaymentAddress(d *font.Drawer, str string) {
 	d.DrawString(str)
 }
 
-func LabelImage(openFileName string, outputFileName string, through string, buyAmt string, paymentSum string, paymentAddr string, options *Options) {
+func writeValidationRule(d *font.Drawer, str string) {
+	d.Dot = fixed.Point26_6{
+		X: fixed.I(100),
+		Y: fixed.I(830),
+	}
+
+	d.DrawString(str)
+}
+
+func LabelImageWithValidation(openFileName string, outputFileName string, rule string, options *Options) {
+	flag.Parse()
+
+	fontBytes, err := ioutil.ReadFile(options.Fontfile)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	f, err := truetype.Parse(fontBytes)
+
+	img, err := os.Open(openFileName)
+
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+	fg := image.NewUniform(options.TextColor)
+	jpgPic, _ := jpeg.Decode(img)
+	rgba := imageToRGBA(jpgPic)
+	d := &font.Drawer{
+		Dst: rgba,
+		Src: fg,
+		Face: truetype.NewFace(f, &truetype.Options{
+			Size:    options.Size,
+			DPI:     options.Dpi,
+			Hinting: font.HintingNone,
+		}),
+	}
+
+	writeValidationRule(d, rule)
+	outFile, err := os.Create(outputFileName)
+	if err != nil {
+		log.Println(err)
+		os.Exit(1)
+	}
+	defer outFile.Close()
+	b := bufio.NewWriter(outFile)
+
+	err = jpeg.Encode(b, rgba, &jpeg.Options{100})
+	if err != nil {
+		log.Println(err)
+		os.Exit(1)
+	}
+	err = b.Flush()
+	if err != nil {
+		log.Println(err)
+		os.Exit(1)
+	}
+	fmt.Println("Wrote %s OK.", outputFileName)
+}
+
+func LabelImageWithPaymentInfo(openFileName string, outputFileName string, through string, buyAmt string, paymentSum string, paymentAddr string, options *Options) {
 	flag.Parse()
 
 	fontBytes, err := ioutil.ReadFile(options.Fontfile)

@@ -2,7 +2,7 @@ scenario:
   name: cryptobot
   provider:
     name: telegram
-    token: '2117926131:AAF7tpRWkO1a4qhdjorbGCdfAHAfs8jCV7o' #'5327386629:AAF-QIZ4i4TWlW0-OABXEtzz9Qp6pRGe2RY' #'2067097332:AAEHszUM1n1Dfrut0_XY_C3YAbiH_KI_Qas' #
+    token: '5327386629:AAF-QIZ4i4TWlW0-OABXEtzz9Qp6pRGe2RY' #'2117926131:AAF7tpRWkO1a4qhdjorbGCdfAHAfs8jCV7o'
 
   states:
     -
@@ -22,7 +22,7 @@ scenario:
               По вопросам обращайтесь в поддержку: @puls_help
       transitions:
         - {name: to_start_2, state_to: start_2, command: {type: 'button', arguments: ['/next', 'Подтвердить']}}
-        - {name: to_start_3, state_to: start_2, command: {type: 'button', arguments: ['/next_2', 'Поддержка', 'tg://user?id=131231613']}}
+        - {name: to_start_3, state_to: start_2, command: {type: 'button', arguments: ['/next_2', 'Поддержка', 'tg://user?id=721010871']}}
         - {name: to_start, state_to: start, command: {type: 'recognize_input', arguments: ['/start']}}
 
     -
@@ -90,16 +90,25 @@ scenario:
     -
       name: state_3_wrong_amt
       actions:
+        send_labeled_validation_photo:
+          name: send_labeled_validation_photo
+      transitions:
+        - { name: to_state_4, state_to: state_4, command: { type: 'validate_market_order', arguments: [ true ] } }
+        - { name: to_state_3_wrong_amt_2, state_to: state_3_wrong_amt_2, command: { type: 'validate_market_order', arguments: [ false ] } }
+        - { name: to_state_6_clear_data_2, state_to: state_6_clear_data, command: { type: 'recognize_input', arguments: [ '/start' ] } }
+        - { name: to_state_6_clear_data_3, state_to: state_6_clear_data, command: { type: 'recognize_input', arguments: [ 'Меню' ] } }
+
+    -
+      name: state_3_wrong_amt_2
+      actions:
         send_text:
           name: send_text
           params:
             text: >
-              К сожалению, я не могу создать заказ. Вы указали неверную сумму покупки BTC (сумма должна быть числом). 
-              Так же, сумма покупки в рублях должна быть в размере от 1000 руб. до 15000 руб.
-              Укажите новую сумму покупки в BTC
+              ⚠️ СУММА ПОКУПКИ: от 0.0001 BTC до 0.0051 BTC
       transitions:
         - { name: to_state_4, state_to: state_4, command: { type: 'validate_market_order', arguments: [ true ] } }
-        - { name: to_state_3_wrong_amt, state_to: state_3_wrong_amt, command: { type: 'validate_market_order', arguments: [ false ] } }
+        - { name: to_state_3_wrong_amt_2, state_to: state_3_wrong_amt_2, command: { type: 'validate_market_order', arguments: [ false ] } }
         - { name: to_state_6_clear_data_2, state_to: state_6_clear_data, command: { type: 'recognize_input', arguments: [ '/start' ] } }
         - { name: to_state_6_clear_data_3, state_to: state_6_clear_data, command: { type: 'recognize_input', arguments: [ 'Меню' ] } }
 
@@ -202,7 +211,7 @@ scenario:
           params:
             text: Произведите оплату {{.market_order_payment_sum}} руб. {{.market_payment_through}} на {{.market_payment_addr}}
       transitions:
-        - { name: to_start_2, state_to: start_2, command: { type: 'button', arguments: [ '/next', 'Я заплатил' ] } }
+        - { name: to_state_9, state_to: state_9, command: { type: 'button', arguments: [ '/next', 'Я заплатил' ] } }
         - { name: to_state_6_clear_data_1, state_to: state_6_clear_data, command: { type: 'button', arguments: [ '/next_2', 'Отказаться от оплаты' ] } }
         - { name: to_state_6_clear_data_2, state_to: state_6_clear_data, command: { type: 'recognize_input', arguments: [ '/start' ] } }
         - { name: to_state_6_clear_data_3, state_to: state_6_clear_data, command: { type: 'recognize_input', arguments: [ 'Меню' ] } }
@@ -210,6 +219,8 @@ scenario:
     -
       name: state_9
       actions:
+        user_has_payed:
+          name: user_has_payed
         send_text:
           name: send_text
           params:

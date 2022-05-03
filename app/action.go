@@ -48,6 +48,7 @@ func (ar *ActionRegistry) ActionRegistryHandler(name string, params map[string]i
 	if name == "confirm_market_order" {
 		return &ConfirmMarketOrder{
 			OrderRepository:    &models.OrderRepository{DB: ar.DB},
+			TokenRepository:    &models.TokenRepository{DB: ar.DB},
 			SettingsRepository: &models.SettingsRepository{DB: ar.DB},
 		}
 	}
@@ -109,8 +110,20 @@ func (ar *ActionRegistry) ActionRegistryHandler(name string, params map[string]i
 		}
 	}
 
+	if name == "user_has_payed" {
+		return &UserHasPayed{
+			OrderRepository:    &models.OrderRepository{DB: ar.DB},
+			TokenRepository:    &models.TokenRepository{DB: ar.DB},
+			SettingsRepository: &models.SettingsRepository{DB: ar.DB},
+		}
+	}
+
 	if name == "send_labeled_photo" {
 		return &SendLabeledPhoto{}
+	}
+
+	if name == "send_labeled_validation_photo" {
+		return &SendLabeledValidationPhoto{}
 	}
 
 	return nil
@@ -133,7 +146,7 @@ func (a *SendLabeledPhoto) Run(
 	extras := t.GetExtras()
 	newFileName := "./resources/" + extras["market_last_order_key"] + ".jpg"
 
-	utils.LabelImage(
+	utils.LabelImageWithPaymentInfo(
 		"./resources/5.jpg",
 		newFileName,
 		extras["market_payment_through"],
@@ -145,6 +158,48 @@ func (a *SendLabeledPhoto) Run(
 			42,
 			"./resources/geometria-bolditalic.ttf",
 			color.RGBA{103, 103, 103, 255},
+		},
+	)
+
+	params := map[string]interface{}{
+		"text": newFileName,
+	}
+
+	sendPhoto := &runtime.SendPhoto{params}
+	err := sendPhoto.Run(p, t, s, prev, c)
+
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	return nil
+}
+
+type SendLabeledValidationPhoto struct {
+}
+
+func (a *SendLabeledValidationPhoto) GetName() string {
+	return "send_labeled_validation_photo"
+}
+
+func (a *SendLabeledValidationPhoto) Run(
+	p runtime.ChatProvider,
+	t runtime.TokenProxy,
+	s *runtime.State,
+	prev *runtime.State,
+	c runtime.Command,
+) runtime.ActionError {
+	newFileName := "./resources/" + uuid.NewString() + "_validation.jpg"
+
+	utils.LabelImageWithValidation(
+		"./resources/3.jpg",
+		newFileName,
+		"СУММА ПОКУПКИ: от 0.0001 BTC до 0.0051 BTC",
+		&utils.Options{
+			72,
+			42,
+			"./resources/geometria-bolditalic.ttf",
+			color.RGBA{193, 50, 10, 255},
 		},
 	)
 
@@ -279,6 +334,7 @@ func (a *CalculateMarketSellOrder) Run(
 
 type ConfirmMarketOrder struct {
 	OrderRepository    *models.OrderRepository
+	TokenRepository    *models.TokenRepository
 	SettingsRepository *models.SettingsRepository
 }
 
@@ -296,6 +352,17 @@ func (a *ConfirmMarketOrder) Run(
 	extras := t.GetExtras()
 	orderKey := extras["market_last_order_key"]
 	order := a.OrderRepository.FindByOrderKey(orderKey)
+
+	if order == nil {
+		return fmt.Errorf("order not found with order key %s", orderKey)
+	}
+
+	token := a.TokenRepository.FindById(order.TokenID)
+
+	if token == nil {
+		return fmt.Errorf("token not found with order key %s", order.TokenID)
+	}
+
 	order.IsConfirmed = true
 	a.OrderRepository.Persist(order)
 
@@ -303,13 +370,13 @@ func (a *ConfirmMarketOrder) Run(
 
 	if order.Type == "Купить" {
 		text = fmt.Sprintf(
-			"Маркет: новый заказ %s, покупка %f %s за %d руб., адрес кошелька покупки - %s, карта на которую пользователь отправит деньги - %s",
-			order.Key,
-			order.BuyAmount,
-			order.Currency,
+			"Заявка на обмен %d:\nПОЛЬЗОВАТЕЛЬ: %s \nСПОСОБ ОПЛАТЫ: %s\nОТДАЁТ: %d RUB\nПОЛУЧАЕТ: %f BTC \n\nДАТА\\ВРЕМЯ: %s",
+			order.ID,
+			token.GetFirstName()+" "+token.GetLastName()+" (@"+token.GetUserName()+")",
+			order.PaymentThrough,
 			int(order.PaymentSum),
-			order.BuyAddress,
-			order.ServiceCard,
+			order.BuyAmount,
+			order.CreatedAt.Format("2006-01-02 15:04:05"),
 		)
 	} else if order.Type == "Продать" {
 		text = fmt.Sprintf(
@@ -335,6 +402,63 @@ func (a *ConfirmMarketOrder) Run(
 			}, {
 				"text":          "Отменить заказ",
 				"callback_data": "/refuse_" + order.DoneKey,
+			}}}}
+
+			for _, botToken := range settings.GetTelegramNotificationChannelsTokens() {
+				NotifyAdmins(text, id, botToken, markup)
+			}
+		}
+	}
+
+	return nil
+}
+
+type UserHasPayed struct {
+	OrderRepository    *models.OrderRepository
+	TokenRepository    *models.TokenRepository
+	SettingsRepository *models.SettingsRepository
+}
+
+func (a *UserHasPayed) GetName() string {
+	return "user_has_payed"
+}
+
+func (a *UserHasPayed) Run(
+	p runtime.ChatProvider,
+	t runtime.TokenProxy,
+	s *runtime.State,
+	prev *runtime.State,
+	c runtime.Command,
+) runtime.ActionError {
+	extras := t.GetExtras()
+	orderKey := extras["market_last_order_key"]
+	order := a.OrderRepository.FindByOrderKey(orderKey)
+
+	token := a.TokenRepository.FindById(order.TokenID)
+
+	if token == nil {
+		return fmt.Errorf("token not found with id %d", order.TokenID)
+	}
+
+	order.IsPayed = true
+	a.OrderRepository.Persist(order)
+
+	text := fmt.Sprintf(
+		"ЗАЯВКА %d БЫЛА ОПЛАЧЕНА ❗️❗️❗️ \nИнформация о заявке: \nПОЛЬЗОВАТЕЛЬ: %s \nСПОСОБ ОПЛАТЫ: %s\nОТДАЁТ: %d RUB\nПОЛУЧАЕТ: %f BTC \n\nДАТА\\ВРЕМЯ: %s",
+		order.ID,
+		token.GetFirstName()+" "+token.GetLastName()+" (@"+token.GetUserName()+")",
+		order.PaymentThrough,
+		int(order.PaymentSum),
+		order.BuyAmount,
+		order.CreatedAt.Format("2006-01-02 15:04:05"),
+	)
+	settings := a.SettingsRepository.FindByScenarioName(p.GetScenarioName())
+
+	if settings != nil {
+		for _, id := range settings.GetTelegramAdminsIds() {
+			markup := &runtime.TelegramReplyMarkup{InlineKeyboard: [][]map[string]string{{{
+				"text":          "ОК",
+				"callback_data": "/payed_yes_" + order.DoneKey,
 			}}}}
 
 			for _, botToken := range settings.GetTelegramNotificationChannelsTokens() {

@@ -24,6 +24,7 @@ type Order struct {
 	Revenue        float64
 	IsDone         bool
 	IsConfirmed    bool
+	IsPayed        bool
 	CreatedAt      time.Time // column name is `created_at`
 	UpdatedAt      time.Time // column name is `updated_at`
 }

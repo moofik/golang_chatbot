@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"gorm.io/gorm"
 	"strconv"
+	"strings"
 )
 
 //app package actions
@@ -46,23 +47,6 @@ func (cr *CommandRegistry) CommandRegistryHandler(cmd string, place string, argu
 		}
 	}
 
-	if cmd == "recognize_order" {
-		validity := false
-
-		if len(arguments) > 0 {
-			validity = arguments[0].(bool)
-		}
-		// в метаданных cmd = text_input, потому что любая коммнада валидации ввода - подмножество комманды UserInput
-		// это нужно для того чтобы можно было найти комманду по прототипу - прототип в данном случае комманда текстового ввода
-		return &OrderConfirmation{
-			OrderRepository: &models.OrderRepository{DB: cr.DB},
-			TokenRepository: &models.TokenRepository{DB: cr.DB},
-			Validity:        validity,
-			Text:            "",
-			Metadata:        &runtime.CommandMetadata{Cmd: "recognize_input", Place: place, Uniqueness: strconv.FormatBool(validity)},
-		}
-	}
-
 	if cmd == "preorder_processing" {
 		validity := false
 
@@ -76,7 +60,24 @@ func (cr *CommandRegistry) CommandRegistryHandler(cmd string, place string, argu
 			TokenRepository: &models.TokenRepository{DB: cr.DB},
 			Validity:        validity,
 			Text:            "",
-			Metadata:        &runtime.CommandMetadata{Cmd: "recognize_input", Place: place, Uniqueness: strconv.FormatBool(validity)},
+			Metadata:        &runtime.CommandMetadata{Cmd: "recognize_input", Place: place, Uniqueness: strconv.FormatBool(validity) + "preorder_processing"},
+		}
+	}
+
+	if cmd == "payment_processing" {
+		validity := false
+
+		if len(arguments) > 0 {
+			validity = arguments[0].(bool)
+		}
+		// в метаданных cmd = text_input, потому что любая коммнада валидации ввода - подмножество комманды UserInput
+		// это нужно для того чтобы можно было найти комманду по прототипу - прототип в данном случае комманда текстового ввода
+		return &PaymentProcessing{
+			OrderRepository: &models.OrderRepository{DB: cr.DB},
+			TokenRepository: &models.TokenRepository{DB: cr.DB},
+			Validity:        validity,
+			Text:            "",
+			Metadata:        &runtime.CommandMetadata{Cmd: "recognize_input", Place: place, Uniqueness: strconv.FormatBool(validity) + "payment_processing"},
 		}
 	}
 
@@ -206,103 +207,6 @@ func (c *ValidateMarketOrderCommand) GetType() string {
 	return "validate_market_order"
 }
 
-type OrderConfirmation struct {
-	OrderRepository *models.OrderRepository
-	TokenRepository *models.TokenRepository
-	Text            string
-	Metadata        *runtime.CommandMetadata
-	Validity        bool
-}
-
-func (c *OrderConfirmation) ToUniquenessHash() string {
-	return runtime.ToUniquenessHash(c.Metadata)
-}
-
-func (c *OrderConfirmation) ToHash() string {
-	return runtime.ToHash(c.Metadata)
-}
-
-func (c *OrderConfirmation) ToProtoHash() string {
-	return runtime.ToProtoHash(c.Metadata)
-}
-
-func (c *OrderConfirmation) Debug() string {
-	return fmt.Sprintf("cmd: %s, state name: %s, text: %s, hash: %s, data: %s", c.Metadata.Cmd, c.Metadata.Place, c.Text, c.ToHash(), c.GetInput())
-}
-
-func (c *OrderConfirmation) GetMetadata() *runtime.CommandMetadata {
-	return c.Metadata
-}
-
-func (c *OrderConfirmation) GetInput() string {
-	return c.Text
-}
-
-func (c *OrderConfirmation) GetCaption() string {
-	return "recognize_input"
-}
-
-func (c *OrderConfirmation) Pass(p runtime.ChatProvider, initCmd runtime.Command, t runtime.TokenProxy) (bool, error) {
-	fmt.Println("ORDER CONFIRMATION LOGGING 1")
-	input := initCmd.GetInput()
-
-	if len(input) <= 8 {
-		return false, nil
-	}
-
-	fmt.Println(input)
-
-	cmd := input[:8]
-	doneKey := input[8:]
-	order := c.OrderRepository.FindByDoneKey(doneKey)
-
-	if order == nil {
-		fmt.Printf("order not found with done key %s\n", doneKey)
-		return false, nil
-	}
-
-	actualValidity := true
-	var pendingCmd runtime.Command
-
-	if cmd == "/accept_" && order != nil {
-		actualValidity = true
-		pendingCmd = runtime.CreatePendingCommand("", "success")
-	} else if cmd == "/refuse_" && order != nil {
-		pendingCmd = runtime.CreatePendingCommand("", "fail")
-
-		actualValidity = false
-	} else {
-		fmt.Printf("can't recognize command %s\n", cmd)
-		return false, fmt.Errorf("can't recognize command")
-	}
-
-	order.IsDone = true
-	c.OrderRepository.Persist(order)
-	token := c.TokenRepository.FindById(order.TokenID)
-	actionRegistry := ActionRegistry{DB: c.TokenRepository.DB}
-	commandRegistry := CommandRegistry{DB: c.TokenRepository.DB}
-	bot := runtime.DefaultBot{
-		ScenarioPath:       "config/scenario",
-		ScenarioName:       "cryptobot",
-		TokenFactory:       models.TokenFactory{DB: c.TokenRepository.DB},
-		TokenRepository:    &models.TokenRepository{DB: c.TokenRepository.DB},
-		SettingsRepository: &models.SettingsRepository{DB: c.TokenRepository.DB},
-		ActionRegistry:     actionRegistry.ActionRegistryHandler,
-		CommandRegistry:    commandRegistry.CommandRegistryHandler,
-		StateErrorHandler:  CryptobotStateErrorHandler,
-	}
-	_, _, scenario := bot.GetBaseActors(&runtime.DefaultSerializedMessageFactory{Ctx: nil})
-	currentState := scenario.GetCurrentState(token)
-	innerToken := scenario.HandleCommand(pendingCmd, currentState, token)
-	c.TokenRepository.Persist(innerToken)
-
-	return c.Validity == actualValidity, nil
-}
-
-func (c *OrderConfirmation) GetType() string {
-	return "recognize_input"
-}
-
 type PreorderProcessing struct {
 	OrderRepository *models.OrderRepository
 	TokenRepository *models.TokenRepository
@@ -340,6 +244,7 @@ func (c *PreorderProcessing) GetCaption() string {
 }
 
 func (c *PreorderProcessing) Pass(p runtime.ChatProvider, initCmd runtime.Command, t runtime.TokenProxy) (bool, error) {
+	fmt.Printf("PreorderProcessing logging \n")
 	input := initCmd.GetInput()
 
 	if len(input) <= 8 {
@@ -355,20 +260,160 @@ func (c *PreorderProcessing) Pass(p runtime.ChatProvider, initCmd runtime.Comman
 		return false, nil
 	}
 
+	token := c.TokenRepository.FindById(order.TokenID)
+
+	if token == nil {
+		fmt.Printf("PaymentProcessing: token not found with id %s\n", order.TokenID)
+		return false, nil
+	}
+
 	actualValidity := true
 
 	if cmd == "/accept_" && order != nil {
+		fmt.Printf("PreorderProcessing validity setting to true\n")
 		actualValidity = true
 	} else if cmd == "/refuse_" && order != nil {
+		fmt.Printf("PreorderProcessing validity setting to false\n")
 		actualValidity = false
 	} else {
-		fmt.Printf("can't recognize command %s\n", cmd)
-		return false, fmt.Errorf("can't recognize command")
+		fmt.Printf("PreorderProcessing: can't recognize command %s\n", cmd)
+		return false, fmt.Errorf("PreorderProcessing: can't recognize command")
 	}
 
+	if actualValidity == false && actualValidity == c.Validity {
+		pendingCmd := runtime.CreatePendingCommand("", "fail")
+		actionRegistry := ActionRegistry{DB: c.TokenRepository.DB}
+		commandRegistry := CommandRegistry{DB: c.TokenRepository.DB}
+		bot := runtime.DefaultBot{
+			ScenarioPath:       "config/scenario",
+			ScenarioName:       "cryptobot",
+			TokenFactory:       models.TokenFactory{DB: c.TokenRepository.DB},
+			TokenRepository:    &models.TokenRepository{DB: c.TokenRepository.DB},
+			SettingsRepository: &models.SettingsRepository{DB: c.TokenRepository.DB},
+			ActionRegistry:     actionRegistry.ActionRegistryHandler,
+			CommandRegistry:    commandRegistry.CommandRegistryHandler,
+			StateErrorHandler:  CryptobotStateErrorHandler,
+		}
+		_, _, scenario := bot.GetBaseActors(&runtime.DefaultSerializedMessageFactory{Ctx: nil})
+		currentState := scenario.GetCurrentState(token)
+		innerToken := scenario.HandleCommand(pendingCmd, currentState, token)
+		c.TokenRepository.Persist(innerToken)
+	}
+
+	fmt.Printf("PreorderProcessing validity %b\n", c.Validity == actualValidity)
 	return c.Validity == actualValidity, nil
 }
 
 func (c *PreorderProcessing) GetType() string {
 	return "preorder_processing"
+}
+
+type PaymentProcessing struct {
+	OrderRepository *models.OrderRepository
+	TokenRepository *models.TokenRepository
+	Text            string
+	Metadata        *runtime.CommandMetadata
+	Validity        bool
+}
+
+func (c *PaymentProcessing) ToUniquenessHash() string {
+	return runtime.ToUniquenessHash(c.Metadata)
+}
+
+func (c *PaymentProcessing) ToHash() string {
+	return runtime.ToHash(c.Metadata)
+}
+
+func (c *PaymentProcessing) ToProtoHash() string {
+	return runtime.ToProtoHash(c.Metadata)
+}
+
+func (c *PaymentProcessing) Debug() string {
+	return fmt.Sprintf("cmd: %s, state name: %s, text: %s, hash: %s, data: %s", c.Metadata.Cmd, c.Metadata.Place, c.Text, c.ToHash(), c.GetInput())
+}
+
+func (c *PaymentProcessing) GetMetadata() *runtime.CommandMetadata {
+	return c.Metadata
+}
+
+func (c *PaymentProcessing) GetInput() string {
+	return c.Text
+}
+
+func (c *PaymentProcessing) GetCaption() string {
+	return "payment_processing"
+}
+
+func (c *PaymentProcessing) Pass(p runtime.ChatProvider, initCmd runtime.Command, t runtime.TokenProxy) (bool, error) {
+	input := initCmd.GetInput()
+	hasPayed, doneKeySuccess := c.ExtractOrderKey(input, "/payed_yes_")
+	hasNoPayed, doneKeyFail := c.ExtractOrderKey(input, "/payed_no_")
+	var order *models.Order
+
+	if hasPayed {
+		order = c.OrderRepository.FindByDoneKey(doneKeySuccess)
+	} else if hasNoPayed {
+		order = c.OrderRepository.FindByDoneKey(doneKeyFail)
+	}
+
+	if order == nil {
+		fmt.Printf("PaymentProcessing: order not found for input %s\n", input)
+		return false, nil
+	}
+
+	token := c.TokenRepository.FindById(order.TokenID)
+
+	if token == nil {
+		fmt.Printf("PaymentProcessing: token not found with id %s\n", order.TokenID)
+		return false, nil
+	}
+
+	actualValidity := true
+
+	if hasPayed && order != nil {
+		actualValidity = true
+	} else if hasNoPayed && order != nil {
+		actualValidity = false
+	} else {
+		fmt.Printf("can't recognize command %s\n", input)
+		return false, nil
+	}
+
+	if actualValidity == true && actualValidity == c.Validity {
+		order.IsDone = true
+		pendingCmd := runtime.CreatePendingCommand("", "success")
+		actionRegistry := ActionRegistry{DB: c.TokenRepository.DB}
+		commandRegistry := CommandRegistry{DB: c.TokenRepository.DB}
+		bot := runtime.DefaultBot{
+			ScenarioPath:       "config/scenario",
+			ScenarioName:       "cryptobot",
+			TokenFactory:       models.TokenFactory{DB: c.TokenRepository.DB},
+			TokenRepository:    &models.TokenRepository{DB: c.TokenRepository.DB},
+			SettingsRepository: &models.SettingsRepository{DB: c.TokenRepository.DB},
+			ActionRegistry:     actionRegistry.ActionRegistryHandler,
+			CommandRegistry:    commandRegistry.CommandRegistryHandler,
+			StateErrorHandler:  CryptobotStateErrorHandler,
+		}
+		_, _, scenario := bot.GetBaseActors(&runtime.DefaultSerializedMessageFactory{Ctx: nil})
+		currentState := scenario.GetCurrentState(token)
+		innerToken := scenario.HandleCommand(pendingCmd, currentState, token)
+		c.TokenRepository.Persist(innerToken)
+		c.OrderRepository.Persist(order)
+	}
+
+	return c.Validity == actualValidity, nil
+}
+
+func (c *PaymentProcessing) GetType() string {
+	return "payment_processing"
+}
+
+func (c *PaymentProcessing) ExtractOrderKey(input, searchCmd string) (bool, string) {
+	cmdIdx := strings.Index(input, searchCmd)
+	if cmdIdx != 0 {
+		fmt.Printf("PaymentProcessing: can't recognize command %s while extracting\n", input)
+		return false, ""
+	}
+	doneIdx := cmdIdx + len(searchCmd)
+	return true, input[doneIdx:]
 }

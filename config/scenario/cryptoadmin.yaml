@@ -2,16 +2,14 @@ scenario:
   name: cryptoadmin
   provider:
     name: telegram
-    token: '2140952227:AAEdQDEL2kuQByeUaYRIga4sutd3TcF4fko' #'5386545649:AAH6tlS_9JkXYimiAtA1gzHMI8RA9jiu-1M'
+    token: '5386545649:AAH6tlS_9JkXYimiAtA1gzHMI8RA9jiu-1M' #'2140952227:AAEdQDEL2kuQByeUaYRIga4sutd3TcF4fko' #
 
   states:
-    -
-      name: unknown
+    - name: unknown
       transitions:
-        - {name: to_start, state_to: start, command: {type: 'text_input', arguments: ['/start']}}
+        - { name: to_start, state_to: start, command: { type: 'text_input', arguments: [ '/start' ] } }
 
-    -
-      name: start
+    - name: start
       actions:
         send_text:
           name: send_text
@@ -19,12 +17,12 @@ scenario:
             text: >
               Панель управления ботом PULS PAY
       transitions:
-        - {name: to_start, state_to: start, command: {type: 'text_input', arguments: ['/start']}}
-        - {name: to_confirm, state_to: confirm_1, command: {type: 'preorder_processing', arguments: [true]}}
-        - {name: to_confirm_8, state_to: confirm_8, command: {type: 'preorder_processing', arguments: [false]}}
+        - { name: to_start, state_to: start, command: { type: 'text_input', arguments: [ '/start' ] } }
+        - { name: to_confirm, state_to: confirm_1, command: { type: 'preorder_processing', arguments: [ true ] } }
+        - { name: to_confirm_8, state_to: confirm_8, command: { type: 'preorder_processing', arguments: [ false ] } }
+        - { name: to_start_2, state_to: start, command: { type: 'payment_processing', arguments: [ true ] } }
 
-    -
-      name: confirm_1
+    - name: confirm_1
       actions:
         remember_name:
           name: remember_input
@@ -36,11 +34,11 @@ scenario:
               Введите номер карты на которую пользователь должен отправить средства
       transitions:
         - { name: to_confirm_1_2, state_to: confirm_1_2, command: { type: 'text_input' } }
-        - {name: to_confirm_1, state_to: confirm_1, command: {type: 'preorder_processing', arguments: [true]}}
-        - {name: to_confirm_8, state_to: confirm_8, command: {type: 'preorder_processing', arguments: [false]}}
+        - { name: to_confirm_1, state_to: confirm_1, command: { type: 'preorder_processing', arguments: [ true ] } }
+        - { name: to_confirm_8, state_to: confirm_8, command: { type: 'preorder_processing', arguments: [ false ] } }
+        - { name: to_start_2, state_to: start, command: { type: 'payment_processing', arguments: [ true ] } }
 
-    -
-      name: confirm_1_2
+    - name: confirm_1_2
       actions:
         remember_name:
           name: remember_input
@@ -48,16 +46,14 @@ scenario:
       transitions:
         - { name: to_confirm_1_3, state_to: confirm_1_3, command: { type: 'instant' } }
 
-    -
-      name: confirm_1_3
+    - name: confirm_1_3
       actions:
         send_payment_address:
           name: send_payment_address
       transitions:
         - { name: to_confirm_1_4, state_to: confirm_1_4, command: { type: 'instant' } }
 
-    -
-      name: confirm_1_4
+    - name: confirm_1_4
       actions:
         st:
           name: send_text
@@ -65,11 +61,11 @@ scenario:
             text: Номер карты отправлен пользователю.
       transitions:
         - { name: to_start, state_to: start, command: { type: 'text_input', arguments: [ '/start' ] } }
-        - { name: to_confirm, state_to: confirm_1, command: { type: 'recognize_order', arguments: [ true ] } }
-        - { name: to_confirm_8, state_to: confirm_8, command: { type: 'recognize_order', arguments: [ false ] } }
+        - { name: to_confirm, state_to: confirm_1, command: { type: 'preorder_processing', arguments: [ true ] } }
+        - { name: to_confirm_8, state_to: confirm_8, command: { type: 'preorder_processing', arguments: [ false ] } }
+        - { name: to_start_2, state_to: start, command: { type: 'payment_processing', arguments: [ true ] } }
 
-    -
-      name: confirm_8
+    - name: confirm_8
       actions:
         send_text:
           name: send_text
@@ -77,19 +73,8 @@ scenario:
             text: >
               Сделка отменена
       transitions:
-        - {name: to_start, state_to: start, command: {type: 'text_input', arguments: ['/start']}}
+        - { name: to_start, state_to: start, command: { type: 'text_input', arguments: [ '/start' ] } }
         - { name: to_confirm, state_to: confirm_1, command: { type: 'preorder_processing', arguments: [ true ] } }
         - { name: to_confirm_8, state_to: confirm_8, command: { type: 'preorder_processing', arguments: [ false ] } }
+        - { name: to_start_2, state_to: start, command: { type: 'payment_processing', arguments: [ true ] } }
 
-#    -
-#      name: confirm_2
-#      actions:
-#        confirm_order:
-#          name: confirm_order
-#        send_text:
-#          name: send_text
-#          params:
-#            text: >
-#              Сделка подтверждена.
-#      transitions:
-#        - {name: to_start, state_to: start, command: {type: 'instant'}}
