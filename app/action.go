@@ -101,6 +101,14 @@ func (ar *ActionRegistry) ActionRegistryHandler(name string, params map[string]i
 		}
 	}
 
+	if name == "send_payment_address" {
+		return &SendPaymentAddress{
+			OrderRepository:    &models.OrderRepository{DB: ar.DB},
+			TokenRepository:    &models.TokenRepository{DB: ar.DB},
+			SettingsRepository: &models.SettingsRepository{DB: ar.DB},
+		}
+	}
+
 	if name == "send_labeled_photo" {
 		return &SendLabeledPhoto{}
 	}
@@ -334,6 +342,62 @@ func (a *ConfirmMarketOrder) Run(
 			}
 		}
 	}
+
+	return nil
+}
+
+type SendPaymentAddress struct {
+	OrderRepository    *models.OrderRepository
+	TokenRepository    *models.TokenRepository
+	SettingsRepository *models.SettingsRepository
+}
+
+func (a *SendPaymentAddress) GetName() string {
+	return "send_payment_address"
+}
+
+func (a *SendPaymentAddress) Run(
+	p runtime.ChatProvider,
+	t runtime.TokenProxy,
+	s *runtime.State,
+	prev *runtime.State,
+	c runtime.Command,
+) runtime.ActionError {
+	extras := t.GetExtras()
+	marker := extras["current_order_marker"]
+	order := a.OrderRepository.FindByDoneKey(marker[8:])
+
+	if order == nil {
+		panic("ORDER IS NILL!!!")
+	}
+
+	paymentAddress := extras["current_order_payment_address"]
+	token := a.TokenRepository.FindById(order.TokenID)
+
+	clientExtras := token.GetExtras()
+	clientExtras["market_payment_addr"] = paymentAddress
+	token.SetExtras(clientExtras)
+	a.TokenRepository.Persist(token)
+
+	order.ServiceCard = paymentAddress
+	a.OrderRepository.Persist(order)
+	pendingCmd := runtime.CreatePendingCommand("", "success")
+	actionRegistry := ActionRegistry{DB: a.TokenRepository.DB}
+	commandRegistry := CommandRegistry{DB: a.TokenRepository.DB}
+	bot := runtime.DefaultBot{
+		ScenarioPath:       "config/scenario",
+		ScenarioName:       "cryptobot",
+		TokenFactory:       models.TokenFactory{DB: a.TokenRepository.DB},
+		TokenRepository:    &models.TokenRepository{DB: a.TokenRepository.DB},
+		SettingsRepository: &models.SettingsRepository{DB: a.TokenRepository.DB},
+		ActionRegistry:     actionRegistry.ActionRegistryHandler,
+		CommandRegistry:    commandRegistry.CommandRegistryHandler,
+		StateErrorHandler:  CryptobotStateErrorHandler,
+	}
+	_, _, scenario := bot.GetBaseActors(&runtime.DefaultSerializedMessageFactory{Ctx: nil})
+	currentState := scenario.GetCurrentState(token)
+	innerToken := scenario.HandleCommand(pendingCmd, currentState, token)
+	a.TokenRepository.Persist(innerToken)
 
 	return nil
 }

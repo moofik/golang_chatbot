@@ -59,12 +59,6 @@ func (s *Scenario) HandleCommand(cmd Command, currentState *State, token TokenPr
 	var actualTransition *petrinet.Transition
 	var err error
 	var lastOrderCommand Command
-	setting := s.SettingsRepository.FindByScenarioName(s.Provider.GetScenarioName())
-
-	if setting != nil && setting.IsOffline() == true {
-		fmt.Println("BOT IS OFFLINE")
-		return token
-	}
 
 	if cmd.GetType() == TYPE_TEXT_INPUT || cmd.GetType() == TYPE_PENDING {
 		var commands []Command

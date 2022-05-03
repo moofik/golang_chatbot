@@ -63,6 +63,23 @@ func (cr *CommandRegistry) CommandRegistryHandler(cmd string, place string, argu
 		}
 	}
 
+	if cmd == "preorder_processing" {
+		validity := false
+
+		if len(arguments) > 0 {
+			validity = arguments[0].(bool)
+		}
+		// в метаданных cmd = text_input, потому что любая коммнада валидации ввода - подмножество комманды UserInput
+		// это нужно для того чтобы можно было найти комманду по прототипу - прототип в данном случае комманда текстового ввода
+		return &PreorderProcessing{
+			OrderRepository: &models.OrderRepository{DB: cr.DB},
+			TokenRepository: &models.TokenRepository{DB: cr.DB},
+			Validity:        validity,
+			Text:            "",
+			Metadata:        &runtime.CommandMetadata{Cmd: "recognize_input", Place: place, Uniqueness: strconv.FormatBool(validity)},
+		}
+	}
+
 	return nil
 }
 
@@ -284,4 +301,74 @@ func (c *OrderConfirmation) Pass(p runtime.ChatProvider, initCmd runtime.Command
 
 func (c *OrderConfirmation) GetType() string {
 	return "recognize_input"
+}
+
+type PreorderProcessing struct {
+	OrderRepository *models.OrderRepository
+	TokenRepository *models.TokenRepository
+	Text            string
+	Metadata        *runtime.CommandMetadata
+	Validity        bool
+}
+
+func (c *PreorderProcessing) ToUniquenessHash() string {
+	return runtime.ToUniquenessHash(c.Metadata)
+}
+
+func (c *PreorderProcessing) ToHash() string {
+	return runtime.ToHash(c.Metadata)
+}
+
+func (c *PreorderProcessing) ToProtoHash() string {
+	return runtime.ToProtoHash(c.Metadata)
+}
+
+func (c *PreorderProcessing) Debug() string {
+	return fmt.Sprintf("cmd: %s, state name: %s, text: %s, hash: %s, data: %s", c.Metadata.Cmd, c.Metadata.Place, c.Text, c.ToHash(), c.GetInput())
+}
+
+func (c *PreorderProcessing) GetMetadata() *runtime.CommandMetadata {
+	return c.Metadata
+}
+
+func (c *PreorderProcessing) GetInput() string {
+	return c.Text
+}
+
+func (c *PreorderProcessing) GetCaption() string {
+	return "preorder_processing"
+}
+
+func (c *PreorderProcessing) Pass(p runtime.ChatProvider, initCmd runtime.Command, t runtime.TokenProxy) (bool, error) {
+	input := initCmd.GetInput()
+
+	if len(input) <= 8 {
+		return false, nil
+	}
+
+	cmd := input[:8]
+	doneKey := input[8:]
+	order := c.OrderRepository.FindByDoneKey(doneKey)
+
+	if order == nil {
+		fmt.Printf("order not found with done key %s\n", doneKey)
+		return false, nil
+	}
+
+	actualValidity := true
+
+	if cmd == "/accept_" && order != nil {
+		actualValidity = true
+	} else if cmd == "/refuse_" && order != nil {
+		actualValidity = false
+	} else {
+		fmt.Printf("can't recognize command %s\n", cmd)
+		return false, fmt.Errorf("can't recognize command")
+	}
+
+	return c.Validity == actualValidity, nil
+}
+
+func (c *PreorderProcessing) GetType() string {
+	return "preorder_processing"
 }

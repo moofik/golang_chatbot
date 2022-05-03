@@ -396,6 +396,7 @@ func (p *TelegramProvider) SendDocument(buttons []string, path string, caption s
 
 	for _, button := range cmdButtons {
 		if button.GetUrl() != "" {
+			fmt.Println("---------____------------------------------")
 			cmdButtonsSlice = append(cmdButtonsSlice, []map[string]string{
 				{
 					"text": button.GetCaption(),
@@ -403,6 +404,7 @@ func (p *TelegramProvider) SendDocument(buttons []string, path string, caption s
 				},
 			})
 		} else if button.GetInput() != "" {
+			fmt.Println("2222222222222222222222222222222222")
 			cmdButtonsSlice = append(cmdButtonsSlice, []map[string]string{
 				{
 					"text":          button.GetCaption(),
