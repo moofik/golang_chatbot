@@ -11,7 +11,8 @@ type Scenario struct {
 	Provider ChatProvider
 	States   map[string]*State
 	DelayedTransitionRepository
-	StateErrorHandler func(p ChatProvider, ctx ProviderContext)
+	SettingsRepository SettingsRepository
+	StateErrorHandler  func(p ChatProvider, ctx ProviderContext)
 }
 
 func (s *Scenario) GetCurrentState(token TokenProxy) *State {
@@ -31,6 +32,22 @@ func (s *Scenario) GetCurrentState(token TokenProxy) *State {
 	return nil
 }
 
+func SeparateRecongnizeInputs(cmds []Command) ([]Command, []Command) {
+	riCmds := []Command{}
+	otherCmds := []Command{}
+	riCmd := RecognizeInputCommand{}
+
+	for _, cmd := range cmds {
+		if cmd.GetType() == riCmd.GetType() {
+			riCmds = append(riCmds, cmd)
+		} else {
+			otherCmds = append(otherCmds, cmd)
+		}
+	}
+
+	return riCmds, otherCmds
+}
+
 func (s *Scenario) HandleCommand(cmd Command, currentState *State, token TokenProxy) TokenProxy {
 	// get state by token
 	// run state actions
@@ -42,12 +59,19 @@ func (s *Scenario) HandleCommand(cmd Command, currentState *State, token TokenPr
 	var actualTransition *petrinet.Transition
 	var err error
 	var lastOrderCommand Command
+	setting := s.SettingsRepository.FindByScenarioName(s.Provider.GetScenarioName())
 
-	if cmd.GetType() == TYPE_TEXT_INPUT {
+	if setting != nil && setting.IsOffline() == true {
+		fmt.Println("BOT IS OFFLINE")
+		return token
+	}
+
+	if cmd.GetType() == TYPE_TEXT_INPUT || cmd.GetType() == TYPE_PENDING {
 		var commands []Command
 		commands, err = currentState.GetCommandListByProto(cmd)
+		riCmds, otherCmds := SeparateRecongnizeInputs(commands)
 
-		for _, c := range commands {
+		for _, c := range riCmds {
 			if c.GetType() == TYPE_TEXT_INPUT {
 				lastOrderCommand = c
 				continue
@@ -61,19 +85,72 @@ func (s *Scenario) HandleCommand(cmd Command, currentState *State, token TokenPr
 				break
 			}
 		}
+
+		if actualTransition == nil {
+			for _, c := range otherCmds {
+				if c.GetType() == TYPE_TEXT_INPUT {
+					lastOrderCommand = c
+					continue
+				}
+
+				if ok, _ := c.Pass(s.Provider, cmd, token); ok {
+					actualTransition, _ = currentState.GetTransitionByUniqueness(c)
+				}
+
+				if actualTransition != nil {
+					break
+				}
+			}
+		}
 	} else {
-		actualTransition, err = currentState.GetTransition(cmd)
+		if actualTransition == nil {
+			//fmt.Println("DBG pre 14 cmd: %v\n", cmd)
+			//fmt.Println("DBG 14 cmd debg: %s\n", cmd.Debug())
+			//
+			//cmds, _ := currentState.GetCommandList()
+			//fmt.Println("----------------")
+			//for _, i2 := range cmds {
+			//	fmt.Println(i2.Debug())
+			//}
+			//fmt.Println("----------------")
+			actualTransition, err = currentState.GetTransition(cmd)
+		}
+
+		if actualTransition == nil {
+			var commands []Command
+
+			riPlaceholder := &RecognizeInputCommand{
+				Marker:   "",
+				Metadata: &CommandMetadata{Cmd: "recognize_input"},
+			}
+
+			commands, err = currentState.GetCommandListByProto(riPlaceholder)
+
+			for _, c := range commands {
+				if ok, _ := c.Pass(s.Provider, cmd, token); ok {
+					actualTransition, _ = currentState.GetTransitionByUniqueness(c)
+					if actualTransition == nil {
+						fmt.Println("BUT TRANS IS NULL")
+					}
+				}
+
+				if actualTransition != nil {
+					break
+				}
+			}
+		}
 	}
 
 	if actualTransition == nil {
 		if lastOrderCommand != nil {
 			actualTransition, err = currentState.GetTransition(lastOrderCommand)
 		} else if s.StateErrorHandler != nil {
-			s.StateErrorHandler(s.Provider, ProviderContext{
-				State:   currentState,
-				Command: nil,
-				Token:   token,
-			})
+			fmt.Println("DBG 17")
+			//s.StateErrorHandler(s.Provider, ProviderContext{
+			//	State:   currentState,
+			//	Command: nil,
+			//	Token:   token,
+			//})
 			return token
 		} else {
 			return token
@@ -81,6 +158,7 @@ func (s *Scenario) HandleCommand(cmd Command, currentState *State, token TokenPr
 	}
 
 	if err != nil {
+		fmt.Println(err.Error())
 		return token
 	}
 
@@ -125,13 +203,14 @@ func (s *Scenario) HandleCommand(cmd Command, currentState *State, token TokenPr
 }
 
 type ScenarioBuilder struct {
-	ActionRegistry    func(string, map[string]interface{}) Action
-	CommandRegistry   func(string, string, []interface{}) Command
-	StateErrorHandler func(p ChatProvider, ctx ProviderContext)
-	Repository        DelayedTransitionRepository
-	Provider          ChatProvider
-	states            map[string]*State
-	currentPlaceName  string
+	ActionRegistry     func(string, map[string]interface{}) Action
+	CommandRegistry    func(string, string, []interface{}) Command
+	StateErrorHandler  func(p ChatProvider, ctx ProviderContext)
+	Repository         DelayedTransitionRepository
+	SettingsRepository SettingsRepository
+	Provider           ChatProvider
+	states             map[string]*State
+	currentPlaceName   string
 }
 
 func (b *ScenarioBuilder) BuildScenario(config ScenarioConfig) (*Scenario, error) {
@@ -174,6 +253,7 @@ func (b *ScenarioBuilder) BuildScenario(config ScenarioConfig) (*Scenario, error
 		b.Provider,
 		b.states,
 		b.Repository,
+		b.SettingsRepository,
 		b.StateErrorHandler,
 	}, nil
 }

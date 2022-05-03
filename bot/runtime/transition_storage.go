@@ -99,6 +99,16 @@ func (ts *TransitionStorage) FindCommandListByProto(command Command) []Command {
 	return elements
 }
 
+func (ts *TransitionStorage) FindCommandList() []Command {
+	var elements []Command
+
+	for _, element := range ts.transitionMap {
+		elements = append(elements, element.Command)
+	}
+
+	return elements
+}
+
 func (ts *TransitionStorage) Add(c Command, t *petrinet.Transition) {
 	if ts.transitionMap == nil {
 		ts.transitionMap = map[string]*TransitionAndCommandElement{}
@@ -160,13 +170,13 @@ func (ts *TransitionStorage) Count() int {
 	return len(ts.transitionMap)
 }
 
-func (ts *TransitionStorage) AllButtonCommands() []Command {
-	commandsMap := map[string]Command{}
-	var commandsSlice []Command
+func (ts *TransitionStorage) AllButtonCommands() []*ButtonPressedCommand {
+	commandsMap := map[string]*ButtonPressedCommand{}
+	var commandsSlice []*ButtonPressedCommand
 
 	for _, element := range ts.transitionMap {
 		if element.Command.GetMetadata().Cmd == "button" {
-			commandsMap[element.Command.GetMetadata().Uniqueness] = element.Command
+			commandsMap[element.Command.GetMetadata().Uniqueness] = element.Command.(*ButtonPressedCommand)
 		}
 	}
 

@@ -66,13 +66,14 @@ func main() {
 		actionRegistry := app.ActionRegistry{DB: db}
 		commandRegistry := app.CommandRegistry{DB: db}
 		bot := runtime.DefaultBot{
-			ScenarioPath:      "config/scenario",
-			ScenarioName:      "cryptobot",
-			TokenFactory:      models.TokenFactory{DB: db},
-			TokenRepository:   &models.TokenRepository{DB: db},
-			ActionRegistry:    actionRegistry.ActionRegistryHandler,
-			CommandRegistry:   commandRegistry.CommandRegistryHandler,
-			StateErrorHandler: app.CryptobotStateErrorHandler,
+			ScenarioPath:       "config/scenario",
+			ScenarioName:       "cryptobot",
+			TokenFactory:       models.TokenFactory{DB: db},
+			TokenRepository:    &models.TokenRepository{DB: db},
+			SettingsRepository: &models.SettingsRepository{DB: db},
+			ActionRegistry:     actionRegistry.ActionRegistryHandler,
+			CommandRegistry:    commandRegistry.CommandRegistryHandler,
+			StateErrorHandler:  app.CryptobotStateErrorHandler,
 		}
 		logRequestMiddleware(c)
 		bot.HandleRequest(&runtime.DefaultSerializedMessageFactory{Ctx: c})
@@ -82,12 +83,13 @@ func main() {
 		actionRegistry := app.ActionRegistry{DB: db}
 		commandRegistry := app.CommandRegistry{DB: db}
 		bot := runtime.DefaultBot{
-			ScenarioPath:    "config/scenario",
-			ScenarioName:    "cryptoadmin",
-			TokenFactory:    models.TokenFactory{DB: db},
-			TokenRepository: &models.TokenRepository{DB: db},
-			ActionRegistry:  actionRegistry.ActionRegistryHandler,
-			CommandRegistry: commandRegistry.CommandRegistryHandler,
+			ScenarioPath:       "config/scenario",
+			ScenarioName:       "cryptoadmin",
+			TokenFactory:       models.TokenFactory{DB: db},
+			TokenRepository:    &models.TokenRepository{DB: db},
+			SettingsRepository: &models.SettingsRepository{DB: db},
+			ActionRegistry:     actionRegistry.ActionRegistryHandler,
+			CommandRegistry:    commandRegistry.CommandRegistryHandler,
 		}
 		logRequestMiddleware(c)
 		bot.HandleRequest(&runtime.DefaultSerializedMessageFactory{Ctx: c})

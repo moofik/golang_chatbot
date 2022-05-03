@@ -323,8 +323,16 @@ func (a *ConfirmMarketOrder) Run(
 
 	if settings != nil {
 		for _, id := range settings.GetTelegramAdminsIds() {
+			markup := &runtime.TelegramReplyMarkup{InlineKeyboard: [][]map[string]string{{{
+				"text":          "Завершить заказ",
+				"callback_data": "/accept_" + order.DoneKey,
+			}, {
+				"text":          "Отменить заказ",
+				"callback_data": "/refuse_" + order.DoneKey,
+			}}}}
+
 			for _, botToken := range settings.GetTelegramNotificationChannelsTokens() {
-				NotifyAdmins(text, id, botToken)
+				NotifyAdmins(text, id, botToken, markup)
 			}
 		}
 	}
@@ -711,6 +719,7 @@ func (a *ConfirmOrder) Run(
 
 	if input[0] == 'm' { // market_ prefix
 		order := a.OrderRepository.FindByDoneKey(c.GetInput())
+		fmt.Println("IS DONE TRUE 1")
 		order.IsDone = true
 		a.OrderRepository.Persist(order)
 	} else { // wallet_ prefix
@@ -800,7 +809,7 @@ func (a *NotifyWalletOrder) Run(
 		if settings != nil {
 			for _, id := range settings.GetTelegramAdminsIds() {
 				for _, botToken := range settings.GetTelegramNotificationChannelsTokens() {
-					NotifyAdmins(text, id, botToken)
+					NotifyAdmins(text, id, botToken, nil)
 				}
 			}
 		}
@@ -818,7 +827,7 @@ func (a *NotifyWalletOrder) Run(
 		if settings != nil {
 			for _, id := range settings.GetTelegramAdminsIds() {
 				for _, botToken := range settings.GetTelegramNotificationChannelsTokens() {
-					NotifyAdmins(text, id, botToken)
+					NotifyAdmins(text, id, botToken, nil)
 				}
 			}
 		}
@@ -835,7 +844,7 @@ func (a *NotifyWalletOrder) Run(
 		if settings != nil {
 			for _, id := range settings.GetTelegramAdminsIds() {
 				for _, botToken := range settings.GetTelegramNotificationChannelsTokens() {
-					NotifyAdmins(text, id, botToken)
+					NotifyAdmins(text, id, botToken, nil)
 				}
 			}
 		}
@@ -846,13 +855,17 @@ func (a *NotifyWalletOrder) Run(
 	return nil
 }
 
-func NotifyAdmins(text string, chatId int, botToken string) {
+func NotifyAdmins(text string, chatId int, botToken string, markup *runtime.TelegramReplyMarkup) {
 	url := "https://api.telegram.org/bot" + botToken + "/sendMessage"
 
 	reqBody := &runtime.TelegramOutgoingMessage{
 		ChatID:    uint(chatId),
 		Text:      text,
 		ParseMode: "HTML",
+	}
+
+	if markup != nil {
+		reqBody.ReplyMarkup = *markup
 	}
 
 	reqBytes, err := json.Marshal(reqBody)

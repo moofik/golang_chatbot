@@ -12,13 +12,14 @@ type Bot interface {
 }
 
 type DefaultBot struct {
-	ScenarioPath      string
-	ScenarioName      string
-	TokenFactory      TokenFactory
-	TokenRepository   TokenRepository
-	ActionRegistry    func(string, map[string]interface{}) Action
-	CommandRegistry   func(string, string, []interface{}) Command
-	StateErrorHandler func(p ChatProvider, ctx ProviderContext)
+	ScenarioPath       string
+	ScenarioName       string
+	TokenFactory       TokenFactory
+	TokenRepository    TokenRepository
+	SettingsRepository SettingsRepository
+	ActionRegistry     func(string, map[string]interface{}) Action
+	CommandRegistry    func(string, string, []interface{}) Command
+	StateErrorHandler  func(p ChatProvider, ctx ProviderContext)
 }
 
 func (b *DefaultBot) GetBaseActors(mf SerializedMessageFactory) (ScenarioConfig, ChatProvider, *Scenario) {
@@ -26,12 +27,13 @@ func (b *DefaultBot) GetBaseActors(mf SerializedMessageFactory) (ScenarioConfig,
 	provider, _ := GetProvider(cfg.ProviderConfig, cfg.Name, b.TokenFactory, mf, b.TokenRepository)
 
 	sbuilder := ScenarioBuilder{
-		ActionRegistry:    b.ActionRegistry,
-		CommandRegistry:   b.CommandRegistry,
-		StateErrorHandler: b.StateErrorHandler,
-		Repository:        nil,
-		Provider:          provider,
-		states:            nil,
+		ActionRegistry:     b.ActionRegistry,
+		CommandRegistry:    b.CommandRegistry,
+		StateErrorHandler:  b.StateErrorHandler,
+		Repository:         nil,
+		SettingsRepository: b.SettingsRepository,
+		Provider:           provider,
+		states:             nil,
 	}
 
 	s, err := sbuilder.BuildScenario(cfg)

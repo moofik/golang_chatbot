@@ -17,9 +17,11 @@ scenario:
           name: send_text
           params:
             text: >
-              Панель управления
+              Панель управления ботом PULS PAY
       transitions:
-        - {name: to_confirm, state_to: confirm_1, command: {type: 'button', arguments: ['/confirm', 'Подтвердить заказ']}}
+        - {name: to_start, state_to: start, command: {type: 'text_input', arguments: ['/start']}}
+        - {name: to_confirm, state_to: confirm_1, command: {type: 'recognize_order', arguments: [true]}}
+        - {name: to_confirm_2, state_to: confirm_1, command: {type: 'recognize_order', arguments: [false]}}
 
     -
       name: confirm_1
@@ -28,19 +30,34 @@ scenario:
           name: send_text
           params:
             text: >
-              Отправьте код завершения сделки.
+              Сделка завершена успешно
       transitions:
-        - {name: to_confirm_2, state_to: confirm_2, command: {type: 'text_input'}}
+        - {name: to_start, state_to: start, command: {type: 'text_input', arguments: ['/start']}}
+        - { name: to_confirm, state_to: confirm_1, command: { type: 'recognize_order', arguments: [ true ] } }
+        - { name: to_confirm_2, state_to: confirm_1, command: { type: 'recognize_order', arguments: [ false ] } }
 
     -
       name: confirm_2
       actions:
-        confirm_order:
-          name: confirm_order
         send_text:
           name: send_text
           params:
             text: >
-              Сделка подтверждена.
+              Сделка отменена
       transitions:
-        - {name: to_start, state_to: start, command: {type: 'instant'}}
+        - {name: to_start, state_to: start, command: {type: 'text_input', arguments: ['/start']}}
+        - { name: to_confirm, state_to: confirm_1, command: { type: 'recognize_order', arguments: [ true ] } }
+        - { name: to_confirm_2, state_to: confirm_1, command: { type: 'recognize_order', arguments: [ false ] } }
+#
+#    -
+#      name: confirm_2
+#      actions:
+#        confirm_order:
+#          name: confirm_order
+#        send_text:
+#          name: send_text
+#          params:
+#            text: >
+#              Сделка подтверждена.
+#      transitions:
+#        - {name: to_start, state_to: start, command: {type: 'instant'}}

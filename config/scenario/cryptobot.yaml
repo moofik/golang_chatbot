@@ -2,7 +2,7 @@ scenario:
   name: cryptobot
   provider:
     name: telegram
-    token: '5327386629:AAF-QIZ4i4TWlW0-OABXEtzz9Qp6pRGe2RY' #'2067097332:AAEHszUM1n1Dfrut0_XY_C3YAbiH_KI_Qas' #
+    token: '2117926131:AAF7tpRWkO1a4qhdjorbGCdfAHAfs8jCV7o' #'2067097332:AAEHszUM1n1Dfrut0_XY_C3YAbiH_KI_Qas' #
 
   states:
     -
@@ -22,6 +22,8 @@ scenario:
               По вопросам обращайтесь в поддержку: @puls_help
       transitions:
         - {name: to_start_2, state_to: start_2, command: {type: 'button', arguments: ['/next', 'Подтвердить']}}
+        - {name: to_start_3, state_to: start_2, command: {type: 'button', arguments: ['/next_2', 'Поддержка', 'tg://user?id=721010871']}}
+        - {name: to_start, state_to: start, command: {type: 'recognize_input', arguments: ['/start']}}
 
     -
       name: start_2
@@ -32,6 +34,8 @@ scenario:
             text: ./resources/1.jpg
       transitions:
         - {name: to_state_2_stationary, state_to: state_2_stationary, command: {type: 'button', arguments: ['/next', 'Начать']}}
+        - {name: to_state_6_clear_data_2, state_to: state_6_clear_data, command: {type: 'recognize_input', arguments: ['/start']}}
+        - {name: to_state_6_clear_data_3, state_to: state_6_clear_data, command: {type: 'recognize_input', arguments: ['Меню']}}
 
     -
       name: state_2_stationary
@@ -63,6 +67,8 @@ scenario:
         - { name: to_state_3_2, state_to: state_3, command: { type: 'button', arguments: [ '/next2', 'Тинькофф' ] } }
         - { name: to_state_3_3, state_to: state_3, command: { type: 'button', arguments: [ '/next3', 'QIWI-кошелек' ] } }
         - { name: to_state_3_4, state_to: state_3, command: { type: 'button', arguments: [ '/next4', 'SIM-карта' ] } }
+        - { name: to_state_6_clear_data_2, state_to: state_6_clear_data, command: { type: 'recognize_input', arguments: [ '/start' ] } }
+        - { name: to_state_6_clear_data_3, state_to: state_6_clear_data, command: { type: 'recognize_input', arguments: [ 'Меню' ] } }
 
     -
       name: state_3
@@ -76,7 +82,26 @@ scenario:
             text: ./resources/3.jpg
             remove_keyboard: true
       transitions:
-        - { name: to_state_4, state_to: state_4, command: { type: 'text_input' } }
+        - { name: to_state_4, state_to: state_4, command: { type: 'validate_market_order', arguments: [ true ] } }
+        - { name: to_state_3_wrong_amt, state_to: state_3_wrong_amt, command: { type: 'validate_market_order', arguments: [ false ] } }
+        - { name: to_state_6_clear_data_2, state_to: state_6_clear_data, command: { type: 'recognize_input', arguments: [ '/start' ] } }
+        - { name: to_state_6_clear_data_3, state_to: state_6_clear_data, command: { type: 'recognize_input', arguments: [ 'Меню' ] } }
+
+    -
+      name: state_3_wrong_amt
+      actions:
+        send_text:
+          name: send_text
+          params:
+            text: >
+              К сожалению, я не могу создать заказ. Вы указали неверную сумму покупки BTC (сумма должна быть числом). 
+              Так же, сумма покупки в рублях должна быть в размере от 1000 руб. до 15000 руб.
+              Укажите новую сумму покупки в BTC
+      transitions:
+        - { name: to_state_4, state_to: state_4, command: { type: 'validate_market_order', arguments: [ true ] } }
+        - { name: to_state_3_wrong_amt, state_to: state_3_wrong_amt, command: { type: 'validate_market_order', arguments: [ false ] } }
+        - { name: to_state_6_clear_data_2, state_to: state_6_clear_data, command: { type: 'recognize_input', arguments: [ '/start' ] } }
+        - { name: to_state_6_clear_data_3, state_to: state_6_clear_data, command: { type: 'recognize_input', arguments: [ 'Меню' ] } }
 
     -
       name: state_4
@@ -90,6 +115,8 @@ scenario:
             text: ./resources/4.jpg
       transitions:
         - { name: to_state_4_remember_address, state_to: state_4_remember_address, command: { type: 'text_input' } }
+        - { name: to_state_6_clear_data_2, state_to: state_6_clear_data, command: { type: 'recognize_input', arguments: [ '/start' ] } }
+        - { name: to_state_6_clear_data_3, state_to: state_6_clear_data, command: { type: 'recognize_input', arguments: [ 'Меню' ] } }
 
     -
       name: state_4_remember_address
@@ -99,6 +126,8 @@ scenario:
           params: { var: 'market_order_buy_address' }
       transitions:
         - {name: to_state_4_calculate_order, state_to: state_4_calculate_order, command: {type: 'instant'}}
+        - { name: to_state_6_clear_data_2, state_to: state_6_clear_data, command: { type: 'recognize_input', arguments: [ '/start' ] } }
+        - { name: to_state_6_clear_data_3, state_to: state_6_clear_data, command: { type: 'recognize_input', arguments: [ 'Меню' ] } }
 
     -
       name: state_4_calculate_order
@@ -114,8 +143,10 @@ scenario:
         send_text:
           name: send_labeled_photo
       transitions:
-        - { name: to_state_6_1, state_to: state_6, command: { type: 'button', arguments: [ '/next1', 'Произвести оплату' ] } }
+        - { name: to_state_6_1, state_to: state_pre_6, command: { type: 'button', arguments: [ '/next1', 'Произвести оплату' ] } }
         - { name: to_state_5_cancel, state_to: state_5_cancel, command: { type: 'button', arguments: [ '/next2', 'Отменить' ] } }
+        - { name: to_state_6_clear_data_2, state_to: state_6_clear_data, command: { type: 'recognize_input', arguments: [ '/start' ] } }
+        - { name: to_state_6_clear_data_3, state_to: state_6_clear_data, command: { type: 'recognize_input', arguments: [ 'Меню' ] } }
 
     -
       name: state_5_cancel
@@ -125,17 +156,45 @@ scenario:
       transitions:
         - {name: to_start_2, state_to: start_2, command: {type: 'instant'}}
 
+
     -
-      name: state_6
+      name: state_pre_6
       actions:
         confirm_market_order:
           name: confirm_market_order
+        send_text:
+          name: send_text
+          params:
+            text: ⏳
+      transitions:
+        - { name: to_state_6_clear_data_2, state_to: state_6_clear_data, command: { type: 'recognize_input', arguments: [ '/start' ] } }
+        - { name: to_state_6_clear_data_3, state_to: state_6_clear_data, command: { type: 'recognize_input', arguments: [ 'Меню' ] } }
+        - { name: to_state_6, state_to: state_6, command: { type: 'pending', arguments: [ 'success' ] } }
+        - { name: to_state_7, state_to: state_7, command: { type: 'pending', arguments: [ 'fail' ] } }
+
+    -
+      name: state_7
+      actions:
+        send_text:
+          name: send_text
+          params:
+            text: К сожалению ваш заказ был отменен.
+      transitions:
+        - { name: to_state_6_clear_data, state_to: state_6_clear_data, command: {type: 'button', arguments: ['/next', 'Оформить новый заказ'] } }
+        - { name: to_state_6_clear_data_2, state_to: state_6_clear_data, command: { type: 'recognize_input', arguments: [ '/start' ] } }
+        - { name: to_state_6_clear_data_3, state_to: state_6_clear_data, command: { type: 'recognize_input', arguments: [ 'Меню' ] } }
+
+    -
+      name: state_6
+      actions:
         send_text:
           name: send_photo
           params:
             text: ./resources/6.jpg
       transitions:
-        - {name: to_state_6_clear_data, state_to: state_6_clear_data, command: {type: 'button', arguments: ['/next', 'Оформить новый заказ']}}
+        - { name: to_state_6_clear_data, state_to: state_6_clear_data, command: {type: 'button', arguments: ['/next', 'Оформить новый заказ'] } }
+        - { name: to_state_6_clear_data_2, state_to: state_6_clear_data, command: { type: 'recognize_input', arguments: [ '/start' ] } }
+        - { name: to_state_6_clear_data_3, state_to: state_6_clear_data, command: { type: 'recognize_input', arguments: [ 'Меню' ] } }
 
     -
       name: state_6_clear_data

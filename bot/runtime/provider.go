@@ -143,12 +143,21 @@ func (p *TelegramProvider) SendTextMessage(text string, ctx ProviderContext) err
 	var cmdButtonsSlice [][]map[string]string
 
 	for _, button := range cmdButtons {
-		cmdButtonsSlice = append(cmdButtonsSlice, []map[string]string{
-			{
-				"text":          button.GetCaption(),
-				"callback_data": button.GetInput(),
-			},
-		})
+		if button.GetUrl() != "" {
+			cmdButtonsSlice = append(cmdButtonsSlice, []map[string]string{
+				{
+					"text": button.GetCaption(),
+					"url":  button.GetUrl(),
+				},
+			})
+		} else if button.GetInput() != "" {
+			cmdButtonsSlice = append(cmdButtonsSlice, []map[string]string{
+				{
+					"text":          button.GetCaption(),
+					"callback_data": button.GetInput(),
+				},
+			})
+		}
 	}
 
 	reqBody := &TelegramOutgoingMessage{
@@ -289,12 +298,21 @@ func (p *TelegramProvider) SendLocalPhoto(buttons []string, path string, ctx Pro
 	var cmdButtonsSlice [][]map[string]string
 
 	for _, button := range cmdButtons {
-		cmdButtonsSlice = append(cmdButtonsSlice, []map[string]string{
-			{
-				"text":          button.GetCaption(),
-				"callback_data": button.GetInput(),
-			},
-		})
+		if button.GetUrl() != "" {
+			cmdButtonsSlice = append(cmdButtonsSlice, []map[string]string{
+				{
+					"text": button.GetCaption(),
+					"url":  button.GetUrl(),
+				},
+			})
+		} else if button.GetInput() != "" {
+			cmdButtonsSlice = append(cmdButtonsSlice, []map[string]string{
+				{
+					"text":          button.GetCaption(),
+					"callback_data": button.GetInput(),
+				},
+			})
+		}
 	}
 
 	var buttonsSlice [][]map[string]string
@@ -306,29 +324,30 @@ func (p *TelegramProvider) SendLocalPhoto(buttons []string, path string, ctx Pro
 		})
 	}
 
-	var structReplyMarkup TelegramReplyMarkup
+	var structReplyMarkup *TelegramReplyMarkup
 
 	if markup != nil {
-		structReplyMarkup = TelegramReplyMarkup{
+		structReplyMarkup = &TelegramReplyMarkup{
 			markup.InlineKeyboard,
 			markup.Keyboard,
 			markup.ResizeKeyboard,
 			markup.RemoveKeyboard,
 		}
-	} else if len(buttonsSlice) > 0 {
+	} else if len(buttonsSlice) > 0 || len(cmdButtons) > 0 {
+		structReplyMarkup = &TelegramReplyMarkup{}
+
 		if len(buttons) > 0 {
-			structReplyMarkup = TelegramReplyMarkup{
-				Keyboard:       buttonsSlice,
-				ResizeKeyboard: true,
-			}
-		} else {
-			structReplyMarkup = TelegramReplyMarkup{
-				InlineKeyboard: cmdButtonsSlice,
-			}
+			structReplyMarkup.Keyboard = buttonsSlice
+			structReplyMarkup.ResizeKeyboard = true
+		}
+
+		if len(cmdButtons) > 0 {
+			structReplyMarkup.InlineKeyboard = cmdButtonsSlice
 		}
 	}
 
 	replyMarkup, err := json.Marshal(structReplyMarkup)
+	fmt.Println("REPLVE MARKYP %v\n", structReplyMarkup)
 	form := map[string]string{"chat_id": strconv.Itoa(int(ctx.Token.GetChatId())), "photo": "@" + path, "reply_markup": string(replyMarkup)}
 	ct, body, err := createForm(form)
 
@@ -376,12 +395,21 @@ func (p *TelegramProvider) SendDocument(buttons []string, path string, caption s
 	var cmdButtonsSlice [][]map[string]string
 
 	for _, button := range cmdButtons {
-		cmdButtonsSlice = append(cmdButtonsSlice, []map[string]string{
-			{
-				"text":          button.GetCaption(),
-				"callback_data": button.GetInput(),
-			},
-		})
+		if button.GetUrl() != "" {
+			cmdButtonsSlice = append(cmdButtonsSlice, []map[string]string{
+				{
+					"text": button.GetCaption(),
+					"url":  button.GetUrl(),
+				},
+			})
+		} else if button.GetInput() != "" {
+			cmdButtonsSlice = append(cmdButtonsSlice, []map[string]string{
+				{
+					"text":          button.GetCaption(),
+					"callback_data": button.GetInput(),
+				},
+			})
+		}
 	}
 
 	var buttonsSlice [][]map[string]string
@@ -393,25 +421,25 @@ func (p *TelegramProvider) SendDocument(buttons []string, path string, caption s
 		})
 	}
 
-	var structReplyMarkup TelegramReplyMarkup
+	var structReplyMarkup *TelegramReplyMarkup
 
 	if markup != nil {
-		structReplyMarkup = TelegramReplyMarkup{
+		structReplyMarkup = &TelegramReplyMarkup{
 			markup.InlineKeyboard,
 			markup.Keyboard,
 			markup.ResizeKeyboard,
 			markup.RemoveKeyboard,
 		}
-	} else if len(buttonsSlice) > 0 {
+	} else if len(buttonsSlice) > 0 || len(cmdButtons) > 0 {
+		structReplyMarkup = &TelegramReplyMarkup{}
+
 		if len(buttons) > 0 {
-			structReplyMarkup = TelegramReplyMarkup{
-				Keyboard:       buttonsSlice,
-				ResizeKeyboard: true,
-			}
-		} else {
-			structReplyMarkup = TelegramReplyMarkup{
-				InlineKeyboard: cmdButtonsSlice,
-			}
+			structReplyMarkup.Keyboard = buttonsSlice
+			structReplyMarkup.ResizeKeyboard = true
+		}
+
+		if len(cmdButtons) > 0 {
+			structReplyMarkup.InlineKeyboard = cmdButtonsSlice
 		}
 	}
 
@@ -469,7 +497,6 @@ func (p *TelegramProvider) SendDocument(buttons []string, path string, caption s
 }
 
 func (p *TelegramProvider) SendChatAction(action string, ctx ProviderContext, markup *TelegramReplyMarkup) error {
-
 	form := map[string]string{"chat_id": strconv.Itoa(int(ctx.Token.GetChatId())), "action": action}
 
 	if markup != nil {

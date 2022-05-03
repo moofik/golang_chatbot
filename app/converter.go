@@ -10,7 +10,8 @@ import (
 
 const COIN_API_KEY = "14F07201-05F6-40DE-8A4D-00DBE5BCAE6A"
 const COIN_MARKET_API_KEY = "4de8f1fc-2780-4e8f-921b-9ce0a247ae36"
-const MONEY_BUY_COEFFICIENT = 1.03  // 3%
+const MONEY_BUY_COEFFICIENT = 8 // 3%
+const MONEY_BUY_MANDATORY_PAY = 750
 const MONEY_SELL_COEFFICIENT = 0.97 // 3%
 const CURRENCY_BTC = "BTC"
 const CURRENCY_ETH = "ETH"
@@ -87,7 +88,7 @@ func ConvertCrypto(from string, to string, amount float64, buy bool) (int, int, 
 	actualPrice := price * amount
 
 	if buy {
-		res = price * MONEY_BUY_COEFFICIENT * amount
+		res = (price * MONEY_BUY_COEFFICIENT * amount) + MONEY_BUY_MANDATORY_PAY
 	} else {
 		res = price * MONEY_SELL_COEFFICIENT * amount
 	}

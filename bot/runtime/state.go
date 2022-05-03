@@ -56,6 +56,10 @@ func (s *State) GetCommandListByProto(command Command) ([]Command, StateError) {
 	return s.TransitionStorage.FindCommandListByProto(command), nil
 }
 
+func (s *State) GetCommandList() ([]Command, StateError) {
+	return s.TransitionStorage.FindCommandList(), nil
+}
+
 func (s *State) Execute(token TokenProxy, provider ChatProvider, command Command, prevState *State) ActionError {
 	actions := map[string]Action{}
 
