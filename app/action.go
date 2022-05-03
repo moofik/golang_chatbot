@@ -295,25 +295,23 @@ func (a *ConfirmMarketOrder) Run(
 
 	if order.Type == "Купить" {
 		text = fmt.Sprintf(
-			"Маркет: новый заказ %s, покупка %f %s за %d руб., адрес кошелька покупки - %s, карта на которую пользователь отправит деньги - %s, код завершения сделки - %s",
+			"Маркет: новый заказ %s, покупка %f %s за %d руб., адрес кошелька покупки - %s, карта на которую пользователь отправит деньги - %s",
 			order.Key,
 			order.BuyAmount,
 			order.Currency,
 			int(order.PaymentSum),
 			order.BuyAddress,
 			order.ServiceCard,
-			order.DoneKey,
 		)
 	} else if order.Type == "Продать" {
 		text = fmt.Sprintf(
-			"Маркет: новый заказ %s, продажа %f %s за %d руб., карта пользователя для вывода средств - %s, адрес кошелька куда пользователь отправит валюту - %s, код завершения сделки - %s",
+			"Маркет: новый заказ %s, продажа %f %s за %d руб., карта пользователя для вывода средств - %s, адрес кошелька куда пользователь отправит валюту - %s",
 			order.Key,
 			order.SellAmount,
 			order.Currency,
 			int(order.PaymentSum),
 			order.SellCard,
 			order.ServiceAddress,
-			order.DoneKey,
 		)
 	} else {
 		return nil
@@ -797,13 +795,12 @@ func (a *NotifyWalletOrder) Run(
 
 	if walletOrder.Type == "Купить" {
 		text := fmt.Sprintf(
-			"Кошелек: новый заказ %s: покупка %f %s за %d руб., карта на которую пользователь отправит деньги - %s, код завершения сделки - %s",
+			"Кошелек: новый заказ %s: покупка %f %s за %d руб., карта на которую пользователь отправит деньги - %s",
 			walletOrder.Key,
 			walletOrder.BuyAmount,
 			walletOrder.Currency,
 			int(walletOrder.PaymentSum),
 			walletOrder.ServiceCard,
-			walletOrder.DoneKey,
 		)
 
 		if settings != nil {
@@ -815,13 +812,12 @@ func (a *NotifyWalletOrder) Run(
 		}
 	} else if walletOrder.Type == "Продать" {
 		text := fmt.Sprintf(
-			"Кошелёк: новый заказ %s: продажа %f %s за %d руб., карта на которую пользователь получит деньги - %s, код завершения сделки - %s",
+			"Кошелёк: новый заказ %s: продажа %f %s за %d руб., карта на которую пользователь получит деньги - %s",
 			walletOrder.Key,
 			walletOrder.SellAmount,
 			walletOrder.Currency,
 			int(walletOrder.PaymentSum),
 			walletOrder.ClientCard,
-			walletOrder.DoneKey,
 		)
 
 		if settings != nil {
@@ -833,12 +829,11 @@ func (a *NotifyWalletOrder) Run(
 		}
 	} else if walletOrder.Type == "Перевод" {
 		text := fmt.Sprintf(
-			"Кошелёк: новый заказ %s: перевод %f %s, адрес кошелька перевода - %s, код завершения сделки - %s",
+			"Кошелёк: новый заказ %s: перевод %f %s, адрес кошелька перевода - %s",
 			walletOrder.Key,
 			walletOrder.ExchangeAmount,
 			walletOrder.Currency,
 			walletOrder.ExchangeAddress,
-			walletOrder.DoneKey,
 		)
 
 		if settings != nil {

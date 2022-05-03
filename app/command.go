@@ -240,29 +240,21 @@ func (c *OrderConfirmation) Pass(p runtime.ChatProvider, initCmd runtime.Command
 	order := c.OrderRepository.FindByDoneKey(doneKey)
 
 	if order == nil {
-		panic("PIZDEC")
+		fmt.Printf("order not found with done key %s\n", doneKey)
+		return false, nil
 	}
 
-	fmt.Println("ORDER CONFIRMATION LOGGING 2")
 	actualValidity := true
 	var pendingCmd runtime.Command
 
 	if cmd == "/accept_" && order != nil {
 		actualValidity = true
-		fmt.Println("ORDER CONFIRMATION LOGGING 3")
 		pendingCmd = runtime.CreatePendingCommand("", "success")
 	} else if cmd == "/refuse_" && order != nil {
-		fmt.Println("ORDER CONFIRMATION LOGGING 4")
 		pendingCmd = runtime.CreatePendingCommand("", "fail")
 
 		actualValidity = false
 	} else {
-		fmt.Println("ORDER CONFIRMATION LOGGING 5")
-		if order == nil {
-			fmt.Printf("order not found with done key %s\n", doneKey)
-			return false, fmt.Errorf("order not found with done key %s", doneKey)
-		}
-
 		fmt.Printf("can't recognize command %s\n", cmd)
 		return false, fmt.Errorf("can't recognize command")
 	}
@@ -286,8 +278,6 @@ func (c *OrderConfirmation) Pass(p runtime.ChatProvider, initCmd runtime.Command
 	currentState := scenario.GetCurrentState(token)
 	innerToken := scenario.HandleCommand(pendingCmd, currentState, token)
 	c.TokenRepository.Persist(innerToken)
-
-	fmt.Println("JEEEEEG!) ALL GOOD :))))")
 
 	return c.Validity == actualValidity, nil
 }
