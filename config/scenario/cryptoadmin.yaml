@@ -2,7 +2,7 @@ scenario:
   name: cryptoadmin
   provider:
     name: telegram
-    token: '5386545649:AAH6tlS_9JkXYimiAtA1gzHMI8RA9jiu-1M' #'2140952227:AAEdQDEL2kuQByeUaYRIga4sutd3TcF4fko' #
+    token: '5386545649:AAH6tlS_9JkXYimiAtA1gzHMI8RA9jiu-1M' # '2140952227:AAEdQDEL2kuQByeUaYRIga4sutd3TcF4fko' #
 
   states:
     - name: unknown

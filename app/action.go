@@ -126,6 +126,10 @@ func (ar *ActionRegistry) ActionRegistryHandler(name string, params map[string]i
 		return &SendLabeledValidationPhoto{}
 	}
 
+	if name == "send_card_photo" {
+		return &SendCardPhoto{}
+	}
+
 	return nil
 }
 
@@ -194,12 +198,56 @@ func (a *SendLabeledValidationPhoto) Run(
 	utils.LabelImageWithValidation(
 		"./resources/3.jpg",
 		newFileName,
-		"СУММА ПОКУПКИ: от 0.0001 BTC до 0.0051 BTC",
+		"СУММА ПОКУПКИ: от 0.0001 BTC до 0.005 BTC",
 		&utils.Options{
 			72,
 			42,
 			"./resources/geometria-bolditalic.ttf",
 			color.RGBA{193, 50, 10, 255},
+		},
+	)
+
+	params := map[string]interface{}{
+		"text": newFileName,
+	}
+
+	sendPhoto := &runtime.SendPhoto{params}
+	err := sendPhoto.Run(p, t, s, prev, c)
+
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	return nil
+}
+
+type SendCardPhoto struct {
+}
+
+func (a *SendCardPhoto) GetName() string {
+	return "send_card_photo"
+}
+
+func (a *SendCardPhoto) Run(
+	p runtime.ChatProvider,
+	t runtime.TokenProxy,
+	s *runtime.State,
+	prev *runtime.State,
+	c runtime.Command,
+) runtime.ActionError {
+	extras := t.GetExtras()
+	newFileName := "./resources/" + extras["market_last_order_key"] + "_card.jpg"
+	cardInfo := extras["market_order_payment_sum"] + " руб. на " + extras["market_payment_through"] + ": " + extras["market_payment_addr"]
+
+	utils.LabelImageWithCard(
+		"./resources/9.jpg",
+		newFileName,
+		cardInfo,
+		&utils.Options{
+			72,
+			26,
+			"./resources/geometria-bolditalic.ttf",
+			color.RGBA{108, 108, 108, 255},
 		},
 	)
 
@@ -397,10 +445,10 @@ func (a *ConfirmMarketOrder) Run(
 	if settings != nil {
 		for _, id := range settings.GetTelegramAdminsIds() {
 			markup := &runtime.TelegramReplyMarkup{InlineKeyboard: [][]map[string]string{{{
-				"text":          "Завершить заказ",
+				"text":          "Отправить номер карты",
 				"callback_data": "/accept_" + order.DoneKey,
 			}, {
-				"text":          "Отменить заказ",
+				"text":          "Отменить обмен",
 				"callback_data": "/refuse_" + order.DoneKey,
 			}}}}
 
@@ -583,6 +631,7 @@ func (a *CancelOrderData) Run(
 		"wallet_order_sell_amount",
 		"wallet_order_type",
 		"market_payment_through",
+		"market_payment_addr",
 	}
 
 	for _, extra := range extrasToDelete {

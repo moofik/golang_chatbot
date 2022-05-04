@@ -2,7 +2,7 @@ scenario:
   name: cryptobot
   provider:
     name: telegram
-    token: '5327386629:AAF-QIZ4i4TWlW0-OABXEtzz9Qp6pRGe2RY' #'2117926131:AAF7tpRWkO1a4qhdjorbGCdfAHAfs8jCV7o'
+    token: '5327386629:AAF-QIZ4i4TWlW0-OABXEtzz9Qp6pRGe2RY' #'2117926131:AAF7tpRWkO1a4qhdjorbGCdfAHAfs8jCV7o' #
 
   states:
     -
@@ -105,7 +105,7 @@ scenario:
           name: send_text
           params:
             text: >
-              ⚠️ СУММА ПОКУПКИ: от 0.0001 BTC до 0.0051 BTC
+              ⚠️ СУММА ПОКУПКИ: от 0.0001 BTC до 0.005 BTC
       transitions:
         - { name: to_state_4, state_to: state_4, command: { type: 'validate_market_order', arguments: [ true ] } }
         - { name: to_state_3_wrong_amt_2, state_to: state_3_wrong_amt_2, command: { type: 'validate_market_order', arguments: [ false ] } }
@@ -182,9 +182,9 @@ scenario:
       name: state_6
       actions:
         send_text:
-          name: send_text
+          name: send_photo
           params:
-            text: Ожидайте реквизиты для оплаты заказа ⏳
+            text: ./resources/8.jpg
       transitions:
         - { name: to_state_8, state_to: state_8, command: { type: 'pending', arguments: [ 'success' ] } }
         - { name: to_state_7, state_to: state_7, command: { type: 'pending', arguments: [ 'fail' ] } }
@@ -197,19 +197,28 @@ scenario:
         send_text:
           name: send_text
           params:
-            text: К сожалению ваш заказ был отменен.
+            text: К сожалению администратор отклонил вашу заявку на обмен.
       transitions:
-        - { name: to_state_6_clear_data, state_to: state_6_clear_data, command: {type: 'button', arguments: ['/next', 'Оформить новый заказ'] } }
+        - { name: to_state_6_clear_data, state_to: state_6_clear_data, command: {type: 'button', arguments: ['/next', 'Начать новый обмен'] } }
         - { name: to_state_6_clear_data_2, state_to: state_6_clear_data, command: { type: 'recognize_input', arguments: [ '/start' ] } }
         - { name: to_state_6_clear_data_3, state_to: state_6_clear_data, command: { type: 'recognize_input', arguments: [ 'Меню' ] } }
 
     -
       name: state_8
       actions:
+        send_card_photo:
+          name: send_card_photo
+      transitions:
+        - { name: to_state_8_2, state_to: state_8_2, command: { type: 'instant' } }
+
+    -
+      name: state_8_2
+      actions:
         send_text:
           name: send_text
           params:
-            text: Произведите оплату {{.market_order_payment_sum}} руб. {{.market_payment_through}} на {{.market_payment_addr}}
+            text: > 
+              Произведите оплату {{.market_order_payment_sum}} руб. на {{.market_payment_through}}: {{.market_payment_addr}}
       transitions:
         - { name: to_state_9, state_to: state_9, command: { type: 'button', arguments: [ '/next', 'Я заплатил' ] } }
         - { name: to_state_6_clear_data_1, state_to: state_6_clear_data, command: { type: 'button', arguments: [ '/next_2', 'Отказаться от оплаты' ] } }
@@ -222,9 +231,9 @@ scenario:
         user_has_payed:
           name: user_has_payed
         send_text:
-          name: send_text
+          name: send_photo
           params:
-            text: Ожидайте проверку оплаты заказа ⏳
+            text: ./resources/7.jpg
       transitions:
         - { name: to_state_10, state_to: state_10, command: { type: 'pending', arguments: [ 'success' ] } }
         - { name: to_state_7, state_to: state_7, command: { type: 'pending', arguments: [ 'fail' ] } }
@@ -239,7 +248,7 @@ scenario:
           params:
             text: ./resources/6.jpg
       transitions:
-        - { name: to_state_6_clear_data, state_to: state_6_clear_data, command: {type: 'button', arguments: ['/next', 'Оформить новый заказ'] } }
+        - { name: to_state_6_clear_data, state_to: state_6_clear_data, command: {type: 'button', arguments: ['/next', 'Начать новый обмен'] } }
         - { name: to_state_6_clear_data_2, state_to: state_6_clear_data, command: { type: 'recognize_input', arguments: [ '/start' ] } }
         - { name: to_state_6_clear_data_3, state_to: state_6_clear_data, command: { type: 'recognize_input', arguments: [ 'Меню' ] } }
 
