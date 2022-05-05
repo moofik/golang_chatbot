@@ -38,8 +38,8 @@ func imageToRGBA(src image.Image) *image.RGBA {
 
 func writePaymentThrough(d *font.Drawer, str string) {
 	d.Dot = fixed.Point26_6{
-		X: fixed.I(830),
-		Y: fixed.I(525),
+		X: fixed.I(500),
+		Y: fixed.I(360),
 	}
 
 	d.DrawString(str)
@@ -47,8 +47,8 @@ func writePaymentThrough(d *font.Drawer, str string) {
 
 func writeBuyAmount(d *font.Drawer, str string) {
 	d.Dot = fixed.Point26_6{
-		X: fixed.I(830),
-		Y: fixed.I(605),
+		X: fixed.I(500),
+		Y: fixed.I(415),
 	}
 
 	d.DrawString(str)
@@ -56,8 +56,8 @@ func writeBuyAmount(d *font.Drawer, str string) {
 
 func writePaymentSum(d *font.Drawer, str string) {
 	d.Dot = fixed.Point26_6{
-		X: fixed.I(830),
-		Y: fixed.I(685),
+		X: fixed.I(500),
+		Y: fixed.I(470),
 	}
 
 	d.DrawString(str)
@@ -65,8 +65,8 @@ func writePaymentSum(d *font.Drawer, str string) {
 
 func writePaymentAddress(d *font.Drawer, str string) {
 	d.Dot = fixed.Point26_6{
-		X: fixed.I(830),
-		Y: fixed.I(765),
+		X: fixed.I(290),
+		Y: fixed.I(525),
 	}
 
 	d.DrawString(str)

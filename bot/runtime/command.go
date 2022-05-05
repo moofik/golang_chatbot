@@ -51,7 +51,7 @@ func (c *InstantTransitionCommand) ToProtoHash() string {
 }
 
 func (c *InstantTransitionCommand) Debug() string {
-	return fmt.Sprintf("cmd: %s, state name: %s, hash: %s", c.Metadata.Cmd, c.Metadata.Place, c.ToHash())
+	return fmt.Sprintf("cmd: %s, state name: %s, hash: %s, CMD + PLACE + UNIQ: %s", c.Metadata.Cmd, c.Metadata.Place, c.ToHash(), c.Metadata.Cmd+c.Metadata.Place+c.Metadata.Uniqueness)
 }
 
 func (c *InstantTransitionCommand) GetMetadata() *CommandMetadata {
@@ -97,7 +97,7 @@ func (c *UserInputCommand) ToProtoHash() string {
 }
 
 func (c *UserInputCommand) Debug() string {
-	return fmt.Sprintf("cmd: %s, state name: %s, text: %s, hash: %s, data: %s", c.Metadata.Cmd, c.Metadata.Place, c.Text, c.ToHash(), c.GetInput())
+	return fmt.Sprintf("cmd: %s, state name: %s, hash: %s, CMD + PLACE + UNIQ: %s", c.Metadata.Cmd, c.Metadata.Place, c.ToHash(), c.Metadata.Cmd+c.Metadata.Place+c.Metadata.Uniqueness)
 }
 
 func (c *UserInputCommand) GetMetadata() *CommandMetadata {
@@ -141,7 +141,7 @@ func (c *ButtonPressedCommand) ToProtoHash() string {
 }
 
 func (c *ButtonPressedCommand) Debug() string {
-	return fmt.Sprintf("cmd: %s, state name: %s, button cmd: %s, button text: %s, hash: %s", c.Metadata.Cmd, c.Metadata.Place, c.ButtonCommand, c.ButtonText, c.ToHash())
+	return fmt.Sprintf("cmd: %s, state name: %s, hash: %s, CMD + PLACE + UNIQ: %s", c.Metadata.Cmd, c.Metadata.Place, c.ToHash(), c.Metadata.Cmd+c.Metadata.Place+c.Metadata.Uniqueness)
 }
 
 func (c *ButtonPressedCommand) GetMetadata() *CommandMetadata {
@@ -187,7 +187,7 @@ func (c *RecognizeInputCommand) ToProtoHash() string {
 }
 
 func (c *RecognizeInputCommand) Debug() string {
-	return fmt.Sprintf("cmd: %s, state name: %s, text: %s, hash: %s, data: %s", c.Metadata.Cmd, c.Metadata.Place, c.Text, c.ToHash(), c.GetInput())
+	return fmt.Sprintf("cmd: %s, state name: %s, hash: %s, CMD + PLACE + UNIQ: %s", c.Metadata.Cmd, c.Metadata.Place, c.ToHash(), c.Metadata.Cmd+c.Metadata.Place+c.Metadata.Uniqueness)
 }
 
 func (c *RecognizeInputCommand) GetMetadata() *CommandMetadata {
@@ -229,7 +229,7 @@ func (c *PendingCommand) ToProtoHash() string {
 }
 
 func (c *PendingCommand) Debug() string {
-	return fmt.Sprintf("cmd: %s, state name: %s, text: %s, hash: %s, data: %s", c.Metadata.Cmd, c.Metadata.Place, c.Text, c.ToHash(), c.GetInput())
+	return fmt.Sprintf("cmd: %s, state name: %s, hash: %s, CMD + PLACE + UNIQ: %s", c.Metadata.Cmd, c.Metadata.Place, c.ToHash(), c.Metadata.Cmd+c.Metadata.Place+c.Metadata.Uniqueness)
 }
 
 func (c *PendingCommand) GetMetadata() *CommandMetadata {

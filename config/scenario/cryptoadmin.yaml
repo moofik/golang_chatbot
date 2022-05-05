@@ -2,7 +2,7 @@ scenario:
   name: cryptoadmin
   provider:
     name: telegram
-    token: '5386545649:AAH6tlS_9JkXYimiAtA1gzHMI8RA9jiu-1M' # '2140952227:AAEdQDEL2kuQByeUaYRIga4sutd3TcF4fko' #
+    token: '2140952227:AAEdQDEL2kuQByeUaYRIga4sutd3TcF4fko' # '5386545649:AAH6tlS_9JkXYimiAtA1gzHMI8RA9jiu-1M' #
 
   states:
     - name: unknown
@@ -21,6 +21,7 @@ scenario:
         - { name: to_confirm, state_to: confirm_1, command: { type: 'preorder_processing', arguments: [ true ] } }
         - { name: to_confirm_8, state_to: confirm_8, command: { type: 'preorder_processing', arguments: [ false ] } }
         - { name: to_start_2, state_to: start, command: { type: 'payment_processing', arguments: [ true ] } }
+        - { name: to_start_2, state_to: start, command: { type: 'payment_processing', arguments: [ false ] } }
 
     - name: confirm_1
       actions:
@@ -37,6 +38,7 @@ scenario:
         - { name: to_confirm_1, state_to: confirm_1, command: { type: 'preorder_processing', arguments: [ true ] } }
         - { name: to_confirm_8, state_to: confirm_8, command: { type: 'preorder_processing', arguments: [ false ] } }
         - { name: to_start_2, state_to: start, command: { type: 'payment_processing', arguments: [ true ] } }
+        - { name: to_start_2, state_to: start, command: { type: 'payment_processing', arguments: [ false ] } }
 
     - name: confirm_1_2
       actions:
@@ -64,6 +66,7 @@ scenario:
         - { name: to_confirm, state_to: confirm_1, command: { type: 'preorder_processing', arguments: [ true ] } }
         - { name: to_confirm_8, state_to: confirm_8, command: { type: 'preorder_processing', arguments: [ false ] } }
         - { name: to_start_2, state_to: start, command: { type: 'payment_processing', arguments: [ true ] } }
+        - { name: to_start_2, state_to: start, command: { type: 'payment_processing', arguments: [ false ] } }
 
     - name: confirm_8
       actions:
@@ -77,4 +80,5 @@ scenario:
         - { name: to_confirm, state_to: confirm_1, command: { type: 'preorder_processing', arguments: [ true ] } }
         - { name: to_confirm_8, state_to: confirm_8, command: { type: 'preorder_processing', arguments: [ false ] } }
         - { name: to_start_2, state_to: start, command: { type: 'payment_processing', arguments: [ true ] } }
+        - { name: to_start_2, state_to: start, command: { type: 'payment_processing', arguments: [ false ] } }
 

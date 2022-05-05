@@ -91,6 +91,7 @@ func (p *TelegramProvider) GetCommand(state *State) Command {
 	cmdText := ""
 
 	if m.CallbackQuery.Data != "" && m.CallbackQuery.Data[0] == '/' {
+		fmt.Println("\n\n\n\n_____________EEEEEEEEEEEEETS BUTTON!!!!!!!!!!!!!!_________________\n\n\n\n")
 		cmdFlag = true
 		cmdText = m.CallbackQuery.Data
 	}

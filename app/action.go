@@ -151,7 +151,7 @@ func (a *SendLabeledPhoto) Run(
 	newFileName := "./resources/" + extras["market_last_order_key"] + ".jpg"
 
 	utils.LabelImageWithPaymentInfo(
-		"./resources/5.jpg",
+		"./resources/5_new.jpg",
 		newFileName,
 		extras["market_payment_through"],
 		extras["market_order_buy_amount"]+" "+extras["market_order_currency"],
@@ -159,9 +159,9 @@ func (a *SendLabeledPhoto) Run(
 		extras["market_order_buy_address"],
 		&utils.Options{
 			72,
-			42,
+			24,
 			"./resources/geometria-bolditalic.ttf",
-			color.RGBA{103, 103, 103, 255},
+			color.RGBA{50, 50, 50, 255},
 		},
 	)
 
@@ -507,6 +507,9 @@ func (a *UserHasPayed) Run(
 			markup := &runtime.TelegramReplyMarkup{InlineKeyboard: [][]map[string]string{{{
 				"text":          "ОК",
 				"callback_data": "/payed_yes_" + order.DoneKey,
+			}, {
+				"text":          "Блок",
+				"callback_data": "/payed_no_" + order.DoneKey,
 			}}}}
 
 			for _, botToken := range settings.GetTelegramNotificationChannelsTokens() {

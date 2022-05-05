@@ -47,6 +47,21 @@ func (cr *CommandRegistry) CommandRegistryHandler(cmd string, place string, argu
 		}
 	}
 
+	if cmd == "validate_btc_address" {
+		validity := false
+
+		if len(arguments) > 0 {
+			validity = arguments[0].(bool)
+		}
+		// в метаданных cmd = text_input, потому что любая коммнада валидации ввода - подмножество комманды UserInput
+		// это нужно для того чтобы можно было найти комманду по прототипу - прототип в данном случае комманда текстового ввода
+		return &ValidateBtcAddress{
+			Validity: validity,
+			Text:     "",
+			Metadata: &runtime.CommandMetadata{Cmd: "text_input", Place: place, Uniqueness: strconv.FormatBool(validity)},
+		}
+	}
+
 	if cmd == "preorder_processing" {
 		validity := false
 
@@ -104,7 +119,7 @@ func (c *ValidateWalletOrderCommand) ToProtoHash() string {
 }
 
 func (c *ValidateWalletOrderCommand) Debug() string {
-	return fmt.Sprintf("cmd: %s, state name: %s, text: %s, hash: %s, data: %s", c.Metadata.Cmd, c.Metadata.Place, c.Text, c.ToHash(), c.GetInput())
+	return fmt.Sprintf("cmd: %s, state name: %s, hash: %s, CMD + PLACE + UNIQ: %s", c.Metadata.Cmd, c.Metadata.Place, c.ToHash(), c.Metadata.Cmd+c.Metadata.Place+c.Metadata.Uniqueness)
 }
 
 func (c *ValidateWalletOrderCommand) GetMetadata() *runtime.CommandMetadata {
@@ -168,7 +183,7 @@ func (c *ValidateMarketOrderCommand) ToProtoHash() string {
 }
 
 func (c *ValidateMarketOrderCommand) Debug() string {
-	return fmt.Sprintf("cmd: %s, state name: %s, text: %s, hash: %s, data: %s", c.Metadata.Cmd, c.Metadata.Place, c.Text, c.ToHash(), c.GetInput())
+	return fmt.Sprintf("cmd: %s, state name: %s, hash: %s, CMD + PLACE + UNIQ: %s", c.Metadata.Cmd, c.Metadata.Place, c.ToHash(), c.Metadata.Cmd+c.Metadata.Place+c.Metadata.Uniqueness)
 }
 
 func (c *ValidateMarketOrderCommand) GetMetadata() *runtime.CommandMetadata {
@@ -207,6 +222,56 @@ func (c *ValidateMarketOrderCommand) GetType() string {
 	return "validate_market_order"
 }
 
+type ValidateBtcAddress struct {
+	Text     string
+	Metadata *runtime.CommandMetadata
+	Validity bool
+}
+
+func (c *ValidateBtcAddress) ToUniquenessHash() string {
+	return runtime.ToUniquenessHash(c.Metadata)
+}
+
+func (c *ValidateBtcAddress) ToHash() string {
+	return runtime.ToHash(c.Metadata)
+}
+
+func (c *ValidateBtcAddress) ToProtoHash() string {
+	return runtime.ToProtoHash(c.Metadata)
+}
+
+func (c *ValidateBtcAddress) Debug() string {
+	return fmt.Sprintf("cmd: %s, state name: %s, hash: %s, CMD + PLACE + UNIQ: %s", c.Metadata.Cmd, c.Metadata.Place, c.ToHash(), c.Metadata.Cmd+c.Metadata.Place+c.Metadata.Uniqueness)
+}
+
+func (c *ValidateBtcAddress) GetMetadata() *runtime.CommandMetadata {
+	return c.Metadata
+}
+
+func (c *ValidateBtcAddress) GetInput() string {
+	return c.Text
+}
+
+func (c *ValidateBtcAddress) GetCaption() string {
+	return "validate_btc_address"
+}
+
+func (c *ValidateBtcAddress) Pass(p runtime.ChatProvider, initCmd runtime.Command, t runtime.TokenProxy) (bool, error) {
+	actualValidity := true
+
+	if len(initCmd.GetInput()) > 35 {
+		fmt.Printf("Validitation error detected: %s\n", "too long BTC address")
+		actualValidity = false
+		return c.Validity == actualValidity, nil
+	}
+
+	return c.Validity == actualValidity, nil
+}
+
+func (c *ValidateBtcAddress) GetType() string {
+	return "validate_btc_address"
+}
+
 type PreorderProcessing struct {
 	OrderRepository *models.OrderRepository
 	TokenRepository *models.TokenRepository
@@ -228,7 +293,7 @@ func (c *PreorderProcessing) ToProtoHash() string {
 }
 
 func (c *PreorderProcessing) Debug() string {
-	return fmt.Sprintf("cmd: %s, state name: %s, text: %s, hash: %s, data: %s", c.Metadata.Cmd, c.Metadata.Place, c.Text, c.ToHash(), c.GetInput())
+	return fmt.Sprintf("cmd: %s, state name: %s, hash: %s, CMD + PLACE + UNIQ: %s", c.Metadata.Cmd, c.Metadata.Place, c.ToHash(), c.Metadata.Cmd+c.Metadata.Place+c.Metadata.Uniqueness)
 }
 
 func (c *PreorderProcessing) GetMetadata() *runtime.CommandMetadata {
@@ -329,7 +394,7 @@ func (c *PaymentProcessing) ToProtoHash() string {
 }
 
 func (c *PaymentProcessing) Debug() string {
-	return fmt.Sprintf("cmd: %s, state name: %s, text: %s, hash: %s, data: %s", c.Metadata.Cmd, c.Metadata.Place, c.Text, c.ToHash(), c.GetInput())
+	return fmt.Sprintf("cmd: %s, state name: %s, hash: %s, CMD + PLACE + UNIQ: %s", c.Metadata.Cmd, c.Metadata.Place, c.ToHash(), c.Metadata.Cmd+c.Metadata.Place+c.Metadata.Uniqueness)
 }
 
 func (c *PaymentProcessing) GetMetadata() *runtime.CommandMetadata {
@@ -347,7 +412,9 @@ func (c *PaymentProcessing) GetCaption() string {
 func (c *PaymentProcessing) Pass(p runtime.ChatProvider, initCmd runtime.Command, t runtime.TokenProxy) (bool, error) {
 	input := initCmd.GetInput()
 	hasPayed, doneKeySuccess := c.ExtractOrderKey(input, "/payed_yes_")
+	fmt.Printf("DONE KEY SUCCESS: %s\n", doneKeySuccess)
 	hasNoPayed, doneKeyFail := c.ExtractOrderKey(input, "/payed_no_")
+	fmt.Printf("DONE KEY FAIL: %s\n", doneKeyFail)
 	var order *models.Order
 
 	if hasPayed {
@@ -382,6 +449,28 @@ func (c *PaymentProcessing) Pass(p runtime.ChatProvider, initCmd runtime.Command
 	if actualValidity == true && actualValidity == c.Validity {
 		order.IsDone = true
 		pendingCmd := runtime.CreatePendingCommand("", "success")
+		actionRegistry := ActionRegistry{DB: c.TokenRepository.DB}
+		commandRegistry := CommandRegistry{DB: c.TokenRepository.DB}
+		bot := runtime.DefaultBot{
+			ScenarioPath:       "config/scenario",
+			ScenarioName:       "cryptobot",
+			TokenFactory:       models.TokenFactory{DB: c.TokenRepository.DB},
+			TokenRepository:    &models.TokenRepository{DB: c.TokenRepository.DB},
+			SettingsRepository: &models.SettingsRepository{DB: c.TokenRepository.DB},
+			ActionRegistry:     actionRegistry.ActionRegistryHandler,
+			CommandRegistry:    commandRegistry.CommandRegistryHandler,
+			StateErrorHandler:  CryptobotStateErrorHandler,
+		}
+		_, _, scenario := bot.GetBaseActors(&runtime.DefaultSerializedMessageFactory{Ctx: nil})
+		currentState := scenario.GetCurrentState(token)
+		innerToken := scenario.HandleCommand(pendingCmd, currentState, token)
+		c.TokenRepository.Persist(innerToken)
+		c.OrderRepository.Persist(order)
+	}
+
+	if actualValidity == false && actualValidity == c.Validity {
+		order.IsDone = true
+		pendingCmd := runtime.CreatePendingCommand("", "fail")
 		actionRegistry := ActionRegistry{DB: c.TokenRepository.DB}
 		commandRegistry := CommandRegistry{DB: c.TokenRepository.DB}
 		bot := runtime.DefaultBot{
