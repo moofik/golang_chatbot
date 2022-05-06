@@ -2,7 +2,8 @@ scenario:
   name: cryptobot
   provider:
     name: telegram
-    token: '2117926131:AAF7tpRWkO1a4qhdjorbGCdfAHAfs8jCV7o' # '5327386629:AAF-QIZ4i4TWlW0-OABXEtzz9Qp6pRGe2RY' #
+    token: '5227770662:AAFSIQ_rZ16wAZlbDU_zwKhl4udJ9yQvMfg' # '5327386629:AAF-QIZ4i4TWlW0-OABXEtzz9Qp6pRGe2RY' #
+    #token: '2117926131:AAF7tpRWkO1a4qhdjorbGCdfAHAfs8jCV7o'
 
   states:
     -
@@ -19,7 +20,7 @@ scenario:
             text: ./resources/Условия сервиса PULS PAY.docx
       transitions:
         - {name: to_start_2, state_to: start_2, command: {type: 'button', arguments: ['/next', 'Полностью согласен']}}
-        - {name: to_start_3, state_to: start_2, command: {type: 'button', arguments: ['/next_2', 'Оператор', 'tg://user?id=131231613']}}
+        - {name: to_start_3, state_to: start_2, command: {type: 'button', arguments: ['/next_2', 'Оператор', 'tg://user?id=721010871']}}
         - {name: to_start, state_to: start, command: {type: 'recognize_input', arguments: ['/start']}}
 
     -
@@ -192,9 +193,10 @@ scenario:
         send_text:
           name: send_text
           params:
-            text: К сожалению администратор отклонил вашу заявку на обмен.
+            text: Администратор отклонил вашу заявку на обмен.
       transitions:
         - { name: to_state_6_clear_data, state_to: state_6_clear_data, command: {type: 'button', arguments: ['/next', 'Начать новый обмен'] } }
+        - {name: to_state_6_clear_data_1, state_to: state_6_clear_data, command: {type: 'button', arguments: ['/next_2', 'Оператор', 'tg://user?id=721010871']}}
         - { name: to_state_6_clear_data_2, state_to: state_6_clear_data, command: { type: 'recognize_input', arguments: [ '/start' ] } }
         - { name: to_state_6_clear_data_3, state_to: state_6_clear_data, command: { type: 'recognize_input', arguments: [ 'Меню' ] } }
 
@@ -254,3 +256,11 @@ scenario:
           name: cancel_order_data
       transitions:
         - {name: to_state_2, state_to: state_2, command: {type: 'instant'}}
+
+    -
+      name: operator
+      actions:
+        send_text:
+          name: send_operator
+      transitions:
+        - {name: to_start, state_to: start, command: {type: 'instant'}}

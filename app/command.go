@@ -259,7 +259,7 @@ func (c *ValidateBtcAddress) GetCaption() string {
 func (c *ValidateBtcAddress) Pass(p runtime.ChatProvider, initCmd runtime.Command, t runtime.TokenProxy) (bool, error) {
 	actualValidity := true
 
-	if len(initCmd.GetInput()) > 35 {
+	if len(initCmd.GetInput()) > 35 || len(initCmd.GetInput()) < 25 {
 		fmt.Printf("Validitation error detected: %s\n", "too long BTC address")
 		actualValidity = false
 		return c.Validity == actualValidity, nil
@@ -358,6 +358,10 @@ func (c *PreorderProcessing) Pass(p runtime.ChatProvider, initCmd runtime.Comman
 			ActionRegistry:     actionRegistry.ActionRegistryHandler,
 			CommandRegistry:    commandRegistry.CommandRegistryHandler,
 			StateErrorHandler:  CryptobotStateErrorHandler,
+			MaintenanceHandler: &MaintenanceHandler{
+				SettingsRepository: &models.SettingsRepository{DB: c.TokenRepository.DB},
+				ScenarioName:       "cryptobot",
+			},
 		}
 		_, _, scenario := bot.GetBaseActors(&runtime.DefaultSerializedMessageFactory{Ctx: nil})
 		currentState := scenario.GetCurrentState(token)
@@ -460,6 +464,10 @@ func (c *PaymentProcessing) Pass(p runtime.ChatProvider, initCmd runtime.Command
 			ActionRegistry:     actionRegistry.ActionRegistryHandler,
 			CommandRegistry:    commandRegistry.CommandRegistryHandler,
 			StateErrorHandler:  CryptobotStateErrorHandler,
+			MaintenanceHandler: &MaintenanceHandler{
+				SettingsRepository: &models.SettingsRepository{DB: c.TokenRepository.DB},
+				ScenarioName:       "cryptobot",
+			},
 		}
 		_, _, scenario := bot.GetBaseActors(&runtime.DefaultSerializedMessageFactory{Ctx: nil})
 		currentState := scenario.GetCurrentState(token)
@@ -482,6 +490,10 @@ func (c *PaymentProcessing) Pass(p runtime.ChatProvider, initCmd runtime.Command
 			ActionRegistry:     actionRegistry.ActionRegistryHandler,
 			CommandRegistry:    commandRegistry.CommandRegistryHandler,
 			StateErrorHandler:  CryptobotStateErrorHandler,
+			MaintenanceHandler: &MaintenanceHandler{
+				SettingsRepository: &models.SettingsRepository{DB: c.TokenRepository.DB},
+				ScenarioName:       "cryptobot",
+			},
 		}
 		_, _, scenario := bot.GetBaseActors(&runtime.DefaultSerializedMessageFactory{Ctx: nil})
 		currentState := scenario.GetCurrentState(token)

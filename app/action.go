@@ -418,12 +418,13 @@ func (a *ConfirmMarketOrder) Run(
 
 	if order.Type == "Купить" {
 		text = fmt.Sprintf(
-			"Заявка на обмен %d:\nПОЛЬЗОВАТЕЛЬ: %s \nСПОСОБ ОПЛАТЫ: %s\nОТДАЁТ: %d RUB\nПОЛУЧАЕТ: %f BTC \n\nДАТА\\ВРЕМЯ: %s",
+			"Заявка на обмен %d:\nПОЛЬЗОВАТЕЛЬ: %s \nСПОСОБ ОПЛАТЫ: %s\nОТДАЁТ: %d RUB\nПОЛУЧАЕТ: %f BTC\nНА АДРЕС: %s\n\nДАТА\\ВРЕМЯ: %s",
 			order.ID,
 			token.GetFirstName()+" "+token.GetLastName()+" (@"+token.GetUserName()+")",
 			order.PaymentThrough,
 			int(order.PaymentSum),
 			order.BuyAmount,
+			order.BuyAddress,
 			order.CreatedAt.Format("2006-01-02 15:04:05"),
 		)
 	} else if order.Type == "Продать" {
@@ -492,12 +493,13 @@ func (a *UserHasPayed) Run(
 	a.OrderRepository.Persist(order)
 
 	text := fmt.Sprintf(
-		"ЗАЯВКА %d БЫЛА ОПЛАЧЕНА ❗️❗️❗️ \nИнформация о заявке: \nПОЛЬЗОВАТЕЛЬ: %s \nСПОСОБ ОПЛАТЫ: %s\nОТДАЁТ: %d RUB\nПОЛУЧАЕТ: %f BTC \n\nДАТА\\ВРЕМЯ: %s",
+		"ЗАЯВКА %d БЫЛА ОПЛАЧЕНА ❗️❗️❗️ \nИнформация о заявке: \nПОЛЬЗОВАТЕЛЬ: %s \nСПОСОБ ОПЛАТЫ: %s\nОТДАЁТ: %d RUB\nПОЛУЧАЕТ: %f BTC\nНА АДРЕС: %s\n\nДАТА\\ВРЕМЯ: %s",
 		order.ID,
 		token.GetFirstName()+" "+token.GetLastName()+" (@"+token.GetUserName()+")",
 		order.PaymentThrough,
 		int(order.PaymentSum),
 		order.BuyAmount,
+		order.BuyAddress,
 		order.CreatedAt.Format("2006-01-02 15:04:05"),
 	)
 	settings := a.SettingsRepository.FindByScenarioName(p.GetScenarioName())
@@ -568,6 +570,10 @@ func (a *SendPaymentAddress) Run(
 		ActionRegistry:     actionRegistry.ActionRegistryHandler,
 		CommandRegistry:    commandRegistry.CommandRegistryHandler,
 		StateErrorHandler:  CryptobotStateErrorHandler,
+		MaintenanceHandler: &MaintenanceHandler{
+			SettingsRepository: &models.SettingsRepository{DB: a.TokenRepository.DB},
+			ScenarioName:       "cryptobot",
+		},
 	}
 	_, _, scenario := bot.GetBaseActors(&runtime.DefaultSerializedMessageFactory{Ctx: nil})
 	currentState := scenario.GetCurrentState(token)

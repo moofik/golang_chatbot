@@ -2,7 +2,8 @@ scenario:
   name: cryptoadmin
   provider:
     name: telegram
-    token: '2140952227:AAEdQDEL2kuQByeUaYRIga4sutd3TcF4fko' # '5386545649:AAH6tlS_9JkXYimiAtA1gzHMI8RA9jiu-1M' #
+    token: '5125554626:AAHDbBVu1WXxBVK2VSxolrp8YMCdbWVHq98' # '5386545649:AAH6tlS_9JkXYimiAtA1gzHMI8RA9jiu-1M' #
+    #token: '2140952227:AAEdQDEL2kuQByeUaYRIga4sutd3TcF4fko' # '5386545649:AAH6tlS_9JkXYimiAtA1gzHMI8RA9jiu-1M' #
 
   states:
     - name: unknown
@@ -18,6 +19,8 @@ scenario:
               Панель управления ботом PULS PAY
       transitions:
         - { name: to_start, state_to: start, command: { type: 'text_input', arguments: [ '/start' ] } }
+        - { name: to_maintenance_on, state_to: maintenance_on, command: { type: 'recognize_input', arguments: [ '/maintenance_on' ] } }
+        - { name: to_maintenance_off, state_to: maintenance_off, command: { type: 'recognize_input', arguments: [ '/maintenance_off' ] } }
         - { name: to_confirm, state_to: confirm_1, command: { type: 'preorder_processing', arguments: [ true ] } }
         - { name: to_confirm_8, state_to: confirm_8, command: { type: 'preorder_processing', arguments: [ false ] } }
         - { name: to_start_2, state_to: start, command: { type: 'payment_processing', arguments: [ true ] } }
@@ -35,6 +38,8 @@ scenario:
               Введите номер карты на которую пользователь должен отправить средства
       transitions:
         - { name: to_confirm_1_2, state_to: confirm_1_2, command: { type: 'text_input' } }
+        - { name: to_maintenance_on, state_to: maintenance_on, command: { type: 'recognize_input', arguments: [ '/maintenance_on' ] } }
+        - { name: to_maintenance_off, state_to: maintenance_off, command: { type: 'recognize_input', arguments: [ '/maintenance_off' ] } }
         - { name: to_confirm_1, state_to: confirm_1, command: { type: 'preorder_processing', arguments: [ true ] } }
         - { name: to_confirm_8, state_to: confirm_8, command: { type: 'preorder_processing', arguments: [ false ] } }
         - { name: to_start_2, state_to: start, command: { type: 'payment_processing', arguments: [ true ] } }
@@ -63,6 +68,8 @@ scenario:
             text: Номер карты отправлен пользователю.
       transitions:
         - { name: to_start, state_to: start, command: { type: 'text_input', arguments: [ '/start' ] } }
+        - { name: to_maintenance_on, state_to: maintenance_on, command: { type: 'recognize_input', arguments: [ '/maintenance_on' ] } }
+        - { name: to_maintenance_off, state_to: maintenance_off, command: { type: 'recognize_input', arguments: [ '/maintenance_off' ] } }
         - { name: to_confirm, state_to: confirm_1, command: { type: 'preorder_processing', arguments: [ true ] } }
         - { name: to_confirm_8, state_to: confirm_8, command: { type: 'preorder_processing', arguments: [ false ] } }
         - { name: to_start_2, state_to: start, command: { type: 'payment_processing', arguments: [ true ] } }
@@ -77,6 +84,40 @@ scenario:
               Сделка отменена
       transitions:
         - { name: to_start, state_to: start, command: { type: 'text_input', arguments: [ '/start' ] } }
+        - { name: to_maintenance_on, state_to: maintenance_on, command: { type: 'recognize_input', arguments: [ '/maintenance_on' ] } }
+        - { name: to_maintenance_off, state_to: maintenance_off, command: { type: 'recognize_input', arguments: [ '/maintenance_off' ] } }
+        - { name: to_confirm, state_to: confirm_1, command: { type: 'preorder_processing', arguments: [ true ] } }
+        - { name: to_confirm_8, state_to: confirm_8, command: { type: 'preorder_processing', arguments: [ false ] } }
+        - { name: to_start_2, state_to: start, command: { type: 'payment_processing', arguments: [ true ] } }
+        - { name: to_start_2, state_to: start, command: { type: 'payment_processing', arguments: [ false ] } }
+
+    - name: maintenance_on
+      actions:
+        send_text:
+          name: send_text
+          params:
+            text: >
+              Для бота PULS PAY включен режим технических работ
+      transitions:
+        - { name: to_start, state_to: start, command: { type: 'text_input', arguments: [ '/start' ] } }
+        - { name: to_maintenance_on, state_to: maintenance_on, command: { type: 'recognize_input', arguments: [ '/maintenance_on' ] } }
+        - { name: to_maintenance_off, state_to: maintenance_off, command: { type: 'recognize_input', arguments: [ '/maintenance_off' ] } }
+        - { name: to_confirm, state_to: confirm_1, command: { type: 'preorder_processing', arguments: [ true ] } }
+        - { name: to_confirm_8, state_to: confirm_8, command: { type: 'preorder_processing', arguments: [ false ] } }
+        - { name: to_start_2, state_to: start, command: { type: 'payment_processing', arguments: [ true ] } }
+        - { name: to_start_2, state_to: start, command: { type: 'payment_processing', arguments: [ false ] } }
+
+    - name: maintenance_off
+      actions:
+        send_text:
+          name: send_text
+          params:
+            text: >
+              Для бота PULS PAY выключен режим технических работ
+      transitions:
+        - { name: to_start, state_to: start, command: { type: 'text_input', arguments: [ '/start' ] } }
+        - { name: to_maintenance_on, state_to: maintenance_on, command: { type: 'recognize_input', arguments: [ '/maintenance_on' ] } }
+        - { name: to_maintenance_off, state_to: maintenance_off, command: { type: 'recognize_input', arguments: [ '/maintenance_off' ] } }
         - { name: to_confirm, state_to: confirm_1, command: { type: 'preorder_processing', arguments: [ true ] } }
         - { name: to_confirm_8, state_to: confirm_8, command: { type: 'preorder_processing', arguments: [ false ] } }
         - { name: to_start_2, state_to: start, command: { type: 'payment_processing', arguments: [ true ] } }

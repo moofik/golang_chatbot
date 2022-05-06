@@ -13,6 +13,7 @@ type Scenario struct {
 	DelayedTransitionRepository
 	SettingsRepository SettingsRepository
 	StateErrorHandler  func(p ChatProvider, ctx ProviderContext)
+	MaintenanceHandler MaintenanceHandler
 }
 
 func (s *Scenario) GetCurrentState(token TokenProxy) *State {
@@ -59,6 +60,25 @@ func (s *Scenario) HandleCommand(cmd Command, currentState *State, token TokenPr
 	var actualTransition *petrinet.Transition
 	var err error
 	var lastOrderCommand Command
+	setting := s.SettingsRepository.FindByScenarioName(s.Provider.GetScenarioName())
+
+	//
+	if setting != nil && setting.IsOffline() == true {
+		fmt.Println("BOT IS OFFLINE")
+		return token
+	}
+
+	s.MaintenanceHandler.Handle(cmd, currentState, token)
+
+	if setting != nil && setting.IsMaintenance() == true {
+		fmt.Println("BOT IS MAINTENANCE")
+		s.Provider.SendTextRaw("Проводятся технические работы.", ProviderContext{
+			State:   currentState,
+			Command: nil,
+			Token:   token,
+		})
+		return token
+	}
 
 	if cmd.GetType() == TYPE_TEXT_INPUT || cmd.GetType() == TYPE_PENDING {
 		var commands []Command
@@ -98,15 +118,15 @@ func (s *Scenario) HandleCommand(cmd Command, currentState *State, token TokenPr
 		}
 	} else {
 		if actualTransition == nil {
-			//fmt.Println("DBG pre 14 cmd: %v\n", cmd)
-			//fmt.Println("DBG 14 cmd debg: %s\n", cmd.Debug())
-			//
-			//cmds, _ := currentState.GetCommandList()
-			//fmt.Println("----------------")
-			//for _, i2 := range cmds {
-			//	fmt.Println(i2.Debug())
-			//}
-			//fmt.Println("----------------")
+			fmt.Println("DBG pre 14 cmd: %v\n", cmd)
+			fmt.Println("DBG 14 cmd debg: %s\n", cmd.Debug())
+
+			cmds, _ := currentState.GetCommandList()
+			fmt.Println("----------------")
+			for _, i2 := range cmds {
+				fmt.Println(i2.Debug())
+			}
+			fmt.Println("----------------")
 			actualTransition, err = currentState.GetTransition(cmd)
 		}
 
@@ -139,7 +159,6 @@ func (s *Scenario) HandleCommand(cmd Command, currentState *State, token TokenPr
 		if lastOrderCommand != nil {
 			actualTransition, err = currentState.GetTransition(lastOrderCommand)
 		} else if s.StateErrorHandler != nil {
-			fmt.Println("DBG 17")
 			//s.StateErrorHandler(s.Provider, ProviderContext{
 			//	State:   currentState,
 			//	Command: nil,
@@ -202,6 +221,7 @@ type ScenarioBuilder struct {
 	StateErrorHandler  func(p ChatProvider, ctx ProviderContext)
 	Repository         DelayedTransitionRepository
 	SettingsRepository SettingsRepository
+	MaintenanceHandler MaintenanceHandler
 	Provider           ChatProvider
 	states             map[string]*State
 	currentPlaceName   string
@@ -249,6 +269,7 @@ func (b *ScenarioBuilder) BuildScenario(config ScenarioConfig) (*Scenario, error
 		b.Repository,
 		b.SettingsRepository,
 		b.StateErrorHandler,
+		b.MaintenanceHandler,
 	}, nil
 }
 

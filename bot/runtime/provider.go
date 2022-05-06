@@ -27,6 +27,7 @@ type ChatProvider interface {
 	GetConfig() ProviderConfig
 	GetScenarioName() string
 	GetTokenRepository() TokenRepository
+	SendTextRaw(text string, ctx ProviderContext) error
 	SendTextMessage(text string, ctx ProviderContext) error
 	SendMarkupMessage(buttons []string, text string, ctx ProviderContext) error
 	SendLocalPhoto(buttons []string, path string, ctx ProviderContext, markup *TelegramReplyMarkup) error
@@ -171,6 +172,50 @@ func (p *TelegramProvider) SendTextMessage(text string, ctx ProviderContext) err
 		reqBody.ReplyMarkup = TelegramReplyMarkup{
 			InlineKeyboard: cmdButtonsSlice,
 		}
+	}
+
+	reqBytes, err := json.Marshal(reqBody)
+
+	if err != nil {
+		return err
+	}
+
+	url := "https://api.telegram.org/bot" + p.GetConfig().Token + "/sendMessage"
+
+	res, err := http.Post(
+		url,
+		"application/json",
+		bytes.NewBuffer(reqBytes),
+	)
+	defer res.Body.Close()
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return err
+	}
+
+	if res.StatusCode == http.StatusOK {
+		bodyBytes, err := io.ReadAll(res.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+		bodyString := string(bodyBytes)
+		sendMsgRes := GetTelegramSendMessageResponse(bodyString)
+		ctx.Token.SetLastBotMessageId(sendMsgRes.Result.MessageID)
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status" + res.Status)
+	}
+
+	return nil
+}
+
+func (p *TelegramProvider) SendTextRaw(text string, ctx ProviderContext) error {
+	reqBody := &TelegramOutgoingMessage{
+		ChatID:    ctx.Token.GetChatId(),
+		Text:      text,
+		ParseMode: "HTML",
 	}
 
 	reqBytes, err := json.Marshal(reqBody)

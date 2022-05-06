@@ -74,6 +74,10 @@ func main() {
 			ActionRegistry:     actionRegistry.ActionRegistryHandler,
 			CommandRegistry:    commandRegistry.CommandRegistryHandler,
 			StateErrorHandler:  app.CryptobotStateErrorHandler,
+			MaintenanceHandler: &app.MaintenanceHandler{
+				SettingsRepository: &models.SettingsRepository{DB: db},
+				ScenarioName:       "cryptobot",
+			},
 		}
 		logRequestMiddleware(c)
 		bot.HandleRequest(&runtime.DefaultSerializedMessageFactory{Ctx: c})
@@ -90,6 +94,10 @@ func main() {
 			SettingsRepository: &models.SettingsRepository{DB: db},
 			ActionRegistry:     actionRegistry.ActionRegistryHandler,
 			CommandRegistry:    commandRegistry.CommandRegistryHandler,
+			MaintenanceHandler: &app.MaintenanceHandler{
+				SettingsRepository: &models.SettingsRepository{DB: db},
+				ScenarioName:       "cryptobot",
+			},
 		}
 		logRequestMiddleware(c)
 		bot.HandleRequest(&runtime.DefaultSerializedMessageFactory{Ctx: c})

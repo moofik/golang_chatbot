@@ -46,6 +46,10 @@ func cli() {
 		ActionRegistry:     actionRegistry.ActionRegistryHandler,
 		CommandRegistry:    commandRegistry.CommandRegistryHandler,
 		StateErrorHandler:  app.CryptobotStateErrorHandler,
+		MaintenanceHandler: &app.MaintenanceHandler{
+			SettingsRepository: &models.SettingsRepository{DB: db},
+			ScenarioName:       "cryptobot",
+		},
 	}
 
 	cmd := os.Args[1]

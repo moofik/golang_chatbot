@@ -12,6 +12,7 @@ type Settings struct {
 	gorm.Model
 	ScenarioName                       string
 	Offline                            bool
+	Maintenance                        bool
 	TelegramAdminsIds                  string
 	TelegramNotificationChannelsTokens string
 	CreatedAt                          time.Time // column name is `created_at`
@@ -24,6 +25,14 @@ func (t *Settings) IsOffline() bool {
 
 func (t *Settings) SetOffline(offline bool) {
 	t.Offline = offline
+}
+
+func (t *Settings) IsMaintenance() bool {
+	return t.Maintenance
+}
+
+func (t *Settings) SetMaintenance(maintenance bool) {
+	t.Maintenance = maintenance
 }
 
 func (t *Settings) GetTelegramAdminsIds() []int {
@@ -87,5 +96,6 @@ func (r *SettingsRepository) FindByScenarioName(scenarioName string) runtime.Set
 		fmt.Println(res.Error.Error())
 		return nil
 	}
+
 	return &settings
 }

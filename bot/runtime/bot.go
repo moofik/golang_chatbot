@@ -20,6 +20,7 @@ type DefaultBot struct {
 	ActionRegistry     func(string, map[string]interface{}) Action
 	CommandRegistry    func(string, string, []interface{}) Command
 	StateErrorHandler  func(p ChatProvider, ctx ProviderContext)
+	MaintenanceHandler MaintenanceHandler
 }
 
 func (b *DefaultBot) GetBaseActors(mf SerializedMessageFactory) (ScenarioConfig, ChatProvider, *Scenario) {
@@ -32,6 +33,7 @@ func (b *DefaultBot) GetBaseActors(mf SerializedMessageFactory) (ScenarioConfig,
 		StateErrorHandler:  b.StateErrorHandler,
 		Repository:         nil,
 		SettingsRepository: b.SettingsRepository,
+		MaintenanceHandler: b.MaintenanceHandler,
 		Provider:           provider,
 		states:             nil,
 	}
