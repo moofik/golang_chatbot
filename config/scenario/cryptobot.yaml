@@ -106,7 +106,7 @@ scenario:
       name: state_4
       actions:
         remember_name:
-          name: remember_input
+          name: remember_numeric
           params: { var: 'market_order_buy_amount' }
         send_text:
           name: send_photo
@@ -125,7 +125,7 @@ scenario:
           name: send_text
           params:
             text: >
-              ⚠️ BTC адрес должен быть от 24 до 35 символов в длину
+              ⚠️ BTC адрес должен быть от 24 символов в длину
       transitions:
         - { name: to_state_4_remember_address, state_to: state_4_remember_address, command: { type: 'validate_btc_address', arguments: [ true ] } }
         - { name: to_state_4_wrong_address, state_to: state_4_wrong_address, command: { type: 'validate_btc_address', arguments: [ false ] } }

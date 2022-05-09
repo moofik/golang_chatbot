@@ -118,6 +118,14 @@ func (ar *ActionRegistry) ActionRegistryHandler(name string, params map[string]i
 		}
 	}
 
+	if name == "send_users_count" {
+		return &SendUsersCount{
+			TokenRepository:    &models.TokenRepository{DB: ar.DB},
+			SettingsRepository: &models.SettingsRepository{DB: ar.DB},
+			Params:             params,
+		}
+	}
+
 	if name == "send_labeled_photo" {
 		return &SendLabeledPhoto{}
 	}
@@ -579,6 +587,46 @@ func (a *SendPaymentAddress) Run(
 	currentState := scenario.GetCurrentState(token)
 	innerToken := scenario.HandleCommand(pendingCmd, currentState, token)
 	a.TokenRepository.Persist(innerToken)
+
+	return nil
+}
+
+type SendUsersCount struct {
+	TokenRepository    *models.TokenRepository
+	SettingsRepository *models.SettingsRepository
+	Params             map[string]interface{}
+}
+
+func (a *SendUsersCount) GetName() string {
+	return "send_users_count"
+}
+
+func (a *SendUsersCount) Run(
+	p runtime.ChatProvider,
+	t runtime.TokenProxy,
+	s *runtime.State,
+	prev *runtime.State,
+	c runtime.Command,
+) runtime.ActionError {
+	ids := a.SettingsRepository.FindByScenarioName("cryptobot").GetTelegramAdminsIds()
+	lst := []uint{}
+
+	for _, id := range ids {
+		lst = append(lst, uint(id))
+	}
+
+	tokensNotAdmins := a.TokenRepository.FindByScenarioIdsNotIn("cryptobot", lst)
+	msg := fmt.Sprintf("Общее число пользователей (не админы): %d", len(tokensNotAdmins))
+
+	err := p.SendTextMessage(msg, runtime.ProviderContext{
+		State:   s,
+		Command: c,
+		Token:   t,
+	})
+
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	return nil
 }

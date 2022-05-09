@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"html/template"
 	"net/http"
+	"strings"
 )
 
 type Action interface {
@@ -81,6 +82,33 @@ func (a *RememberInput) Run(
 ) ActionError {
 	extras := t.GetExtras()
 	extras[a.params["var"].(string)] = c.GetInput()
+	t.SetExtras(extras)
+	return nil
+}
+
+type RememberNumeric struct {
+	params map[string]interface{}
+}
+
+func (a *RememberNumeric) GetName() string {
+	return "remember_numeric"
+}
+
+func (a *RememberNumeric) Run(
+	p ChatProvider,
+	t TokenProxy,
+	s *State,
+	prev *State,
+	c Command,
+) ActionError {
+	extras := t.GetExtras()
+	input := c.GetInput()
+
+	if strings.ContainsAny(input, ",") {
+		input = strings.ReplaceAll(input, ",", ".")
+	}
+
+	extras[a.params["var"].(string)] = input
 	t.SetExtras(extras)
 	return nil
 }
@@ -403,6 +431,10 @@ func CreateAction(name string, params map[string]interface{}, actionRegistry fun
 
 	if name == "remember_input" {
 		return &RememberInput{params: params}
+	}
+
+	if name == "remember_numeric" {
+		return &RememberNumeric{params: params}
 	}
 
 	if name == "remember_var" {

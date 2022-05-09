@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 	"strconv"
 	"strings"
+	"unicode"
 )
 
 //app package actions
@@ -201,7 +202,13 @@ func (c *ValidateMarketOrderCommand) GetCaption() string {
 func (c *ValidateMarketOrderCommand) Pass(p runtime.ChatProvider, initCmd runtime.Command, t runtime.TokenProxy) (bool, error) {
 	extras := t.GetExtras()
 	actualValidity := true
-	amt, err := strconv.ParseFloat(initCmd.GetInput(), 64)
+	input := initCmd.GetInput()
+
+	if strings.ContainsAny(input, ",") {
+		input = strings.ReplaceAll(input, ",", ".")
+	}
+
+	amt, err := strconv.ParseFloat(input, 64)
 
 	if err != nil {
 		fmt.Println("Validitation error detected: %s", err.Error())
@@ -258,8 +265,17 @@ func (c *ValidateBtcAddress) GetCaption() string {
 
 func (c *ValidateBtcAddress) Pass(p runtime.ChatProvider, initCmd runtime.Command, t runtime.TokenProxy) (bool, error) {
 	actualValidity := true
+	input := initCmd.GetInput()
+	isUnicode := false
 
-	if len(initCmd.GetInput()) > 35 || len(initCmd.GetInput()) < 25 {
+	for _, c := range input {
+		isUnicode = unicode.Is(unicode.Cyrillic, rune(c)) || isUnicode
+	}
+
+	fmt.Printf("UNICODE %b\n", isUnicode)
+	fmt.Printf("LEN %b\n", isUnicode)
+
+	if isUnicode || len(initCmd.GetInput()) < 24 {
 		fmt.Printf("Validitation error detected: %s\n", "too long BTC address")
 		actualValidity = false
 		return c.Validity == actualValidity, nil

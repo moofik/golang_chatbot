@@ -24,7 +24,8 @@ scenario:
         - { name: to_confirm, state_to: confirm_1, command: { type: 'preorder_processing', arguments: [ true ] } }
         - { name: to_confirm_8, state_to: confirm_8, command: { type: 'preorder_processing', arguments: [ false ] } }
         - { name: to_start_2, state_to: start, command: { type: 'payment_processing', arguments: [ true ] } }
-        - { name: to_start_2, state_to: start, command: { type: 'payment_processing', arguments: [ false ] } }
+        - { name: to_start_3, state_to: start, command: { type: 'payment_processing', arguments: [ false ] } }
+        - { name: to_users_count, state_to: users_count, command: { type: 'recognize_input', arguments: [ '/users_count' ] } }
 
     - name: confirm_1
       actions:
@@ -43,7 +44,8 @@ scenario:
         - { name: to_confirm_1, state_to: confirm_1, command: { type: 'preorder_processing', arguments: [ true ] } }
         - { name: to_confirm_8, state_to: confirm_8, command: { type: 'preorder_processing', arguments: [ false ] } }
         - { name: to_start_2, state_to: start, command: { type: 'payment_processing', arguments: [ true ] } }
-        - { name: to_start_2, state_to: start, command: { type: 'payment_processing', arguments: [ false ] } }
+        - { name: to_start_3, state_to: start, command: { type: 'payment_processing', arguments: [ false ] } }
+        - { name: to_users_count, state_to: users_count, command: { type: 'recognize_input', arguments: [ '/users_count' ] } }
 
     - name: confirm_1_2
       actions:
@@ -73,7 +75,8 @@ scenario:
         - { name: to_confirm, state_to: confirm_1, command: { type: 'preorder_processing', arguments: [ true ] } }
         - { name: to_confirm_8, state_to: confirm_8, command: { type: 'preorder_processing', arguments: [ false ] } }
         - { name: to_start_2, state_to: start, command: { type: 'payment_processing', arguments: [ true ] } }
-        - { name: to_start_2, state_to: start, command: { type: 'payment_processing', arguments: [ false ] } }
+        - { name: to_start_3, state_to: start, command: { type: 'payment_processing', arguments: [ false ] } }
+        - { name: to_users_count, state_to: users_count, command: { type: 'recognize_input', arguments: [ '/users_count' ] } }
 
     - name: confirm_8
       actions:
@@ -89,7 +92,8 @@ scenario:
         - { name: to_confirm, state_to: confirm_1, command: { type: 'preorder_processing', arguments: [ true ] } }
         - { name: to_confirm_8, state_to: confirm_8, command: { type: 'preorder_processing', arguments: [ false ] } }
         - { name: to_start_2, state_to: start, command: { type: 'payment_processing', arguments: [ true ] } }
-        - { name: to_start_2, state_to: start, command: { type: 'payment_processing', arguments: [ false ] } }
+        - { name: to_start_3, state_to: start, command: { type: 'payment_processing', arguments: [ false ] } }
+        - { name: to_users_count, state_to: users_count, command: { type: 'recognize_input', arguments: [ '/users_count' ] } }
 
     - name: maintenance_on
       actions:
@@ -105,7 +109,8 @@ scenario:
         - { name: to_confirm, state_to: confirm_1, command: { type: 'preorder_processing', arguments: [ true ] } }
         - { name: to_confirm_8, state_to: confirm_8, command: { type: 'preorder_processing', arguments: [ false ] } }
         - { name: to_start_2, state_to: start, command: { type: 'payment_processing', arguments: [ true ] } }
-        - { name: to_start_2, state_to: start, command: { type: 'payment_processing', arguments: [ false ] } }
+        - { name: to_start_3, state_to: start, command: { type: 'payment_processing', arguments: [ false ] } }
+        - { name: to_users_count, state_to: users_count, command: { type: 'recognize_input', arguments: [ '/users_count' ] } }
 
     - name: maintenance_off
       actions:
@@ -121,5 +126,20 @@ scenario:
         - { name: to_confirm, state_to: confirm_1, command: { type: 'preorder_processing', arguments: [ true ] } }
         - { name: to_confirm_8, state_to: confirm_8, command: { type: 'preorder_processing', arguments: [ false ] } }
         - { name: to_start_2, state_to: start, command: { type: 'payment_processing', arguments: [ true ] } }
-        - { name: to_start_2, state_to: start, command: { type: 'payment_processing', arguments: [ false ] } }
+        - { name: to_start_3, state_to: start, command: { type: 'payment_processing', arguments: [ false ] } }
+        - { name: to_users_count, state_to: users_count, command: { type: 'recognize_input', arguments: [ '/users_count' ] } }
+
+    - name: users_count
+      actions:
+        send_users_count:
+          name: send_users_count
+      transitions:
+        - { name: to_start, state_to: start, command: { type: 'text_input', arguments: [ '/start' ] } }
+        - { name: to_maintenance_on, state_to: maintenance_on, command: { type: 'recognize_input', arguments: [ '/maintenance_on' ] } }
+        - { name: to_maintenance_off, state_to: maintenance_off, command: { type: 'recognize_input', arguments: [ '/maintenance_off' ] } }
+        - { name: to_confirm, state_to: confirm_1, command: { type: 'preorder_processing', arguments: [ true ] } }
+        - { name: to_confirm_8, state_to: confirm_8, command: { type: 'preorder_processing', arguments: [ false ] } }
+        - { name: to_start_2, state_to: start, command: { type: 'payment_processing', arguments: [ true ] } }
+        - { name: to_start_3, state_to: start, command: { type: 'payment_processing', arguments: [ false ] } }
+        - { name: to_users_count, state_to: users_count, command: { type: 'recognize_input', arguments: [ '/users_count' ] } }
 

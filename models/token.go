@@ -185,3 +185,19 @@ func (r *TokenRepository) FindByScenario(scenario string) []runtime.TokenProxy {
 
 	return models
 }
+
+func (r *TokenRepository) FindByScenarioIdsNotIn(scenario string, listIds []uint) []runtime.TokenProxy {
+	var tokens []*Token
+
+	r.DB.
+		Where("scenario_name = ?", scenario).
+		Not(map[string]interface{}{"chat_id": listIds}).
+		Find(&tokens)
+
+	models := make([]runtime.TokenProxy, len(tokens))
+	for i, v := range tokens {
+		models[i] = runtime.TokenProxy(v)
+	}
+
+	return models
+}
